@@ -53,8 +53,10 @@ public class DataModelValue {
     				this.value = Integer.parseInt(value);
     				
     				if (enumType.isValidOrdValue(Integer.parseInt(value)) == false) {
+						/*
     					throw new IllegalValueException(value + 
         						" is not a valid value of type " + sclType.getId());
+								*/
     				}
     				
     				System.out.println("WARNING: Initialization of ENUM with ordinal value!");
@@ -147,7 +149,7 @@ public class DataModelValue {
         	System.out.println("Warning: Initialization of QUALITY is unsupported!");
         	break;
         default:
-            throw new IllegalValueException("Unsupported type " + type.toString() + " value: " + value);
+            //throw new IllegalValueException("Unsupported type " + type.toString() + " value: " + value);
         }
     }
     

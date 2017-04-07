@@ -1709,8 +1709,9 @@ enqueueReport(ReportControl* reportControl, bool isIntegrity, bool isGI, uint64_
             assert(dataSetEntry != NULL);
 
             bufferEntrySize += 1; /* reason-for-inclusion */
-
-            bufferEntrySize += MmsValue_getSizeInMemory(dataSetEntry->value);
+			
+			if(dataSetEntry->value)
+            	bufferEntrySize += MmsValue_getSizeInMemory(dataSetEntry->value);
 
             dataSetEntry = dataSetEntry->sibling;
         }

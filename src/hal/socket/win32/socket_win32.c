@@ -24,6 +24,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <time.h>
 
 #pragma comment (lib, "Ws2_32.lib")
 
@@ -363,7 +364,7 @@ int
 Socket_read(Socket self, uint8_t* buf, int size)
 {
     int bytes_read = recv(self->fd, (char*) buf, size, 0);
-
+	
     if (bytes_read == 0) // peer has closed socket
         return -1;
 
@@ -373,8 +374,30 @@ Socket_read(Socket self, uint8_t* buf, int size)
         else
             return -1;
     }
+	/* dump raw data for debugging */
+	//Socket_dump_read_data(buf, bytes_read);
 
 	return bytes_read;
+}
+
+int
+Socket_dump_read_data(uint8_t *buf, int size)
+{
+	CHAR szFileName[MAX_PATH];
+	DWORD nRetCode;
+
+	if(! CreateDirectory("RAW_SOCKET_DATA", NULL))
+		if((nRetCode = GetLastError()) != ERROR_ALREADY_EXISTS)
+			return(nRetCode);
+	sprintf(szFileName, ".\\RAW_SOCKET_DATA\\Read_%d_%d", GetTickCount(), size);
+	//
+	FILE *fp = fopen(szFileName, "wb");
+	if(fp)
+	{
+		fwrite(buf, size, 1, fp);
+		fclose(fp);
+	}
+	return(ERROR_SUCCESS);
 }
 
 int
@@ -392,6 +415,26 @@ Socket_write(Socket self, uint8_t* buf, int size)
     }
 
 	return bytes_sent;
+}
+
+int
+Socket_dump_write_data(uint8_t *buf, int size)
+{
+	CHAR szFileName[MAX_PATH];
+	DWORD nRetCode;
+
+	if(! CreateDirectory("RAW_SOCKET_DATA", NULL))
+		if((nRetCode = GetLastError()) != ERROR_ALREADY_EXISTS)
+			return(nRetCode);
+	sprintf(szFileName, ".\\RAW_SOCKET_DATA\\Write_%d_%d", GetTickCount(), size);
+	//
+	FILE *fp = fopen(szFileName, "wb");
+	if(fp)
+	{
+		fwrite(buf, size, 1, fp);
+		fclose(fp);
+	}
+	return(ERROR_SUCCESS);
 }
 
 void

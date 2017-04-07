@@ -212,7 +212,7 @@ Socket_connect(Socket self, const char* address, int port);
  */
 int
 Socket_read(Socket self, uint8_t* buf, int size);
-
+int Socket_dump_read_data(uint8_t *buf, int size);
 /**
  * \brief send a message through the socket
  *
@@ -224,7 +224,7 @@ Socket_read(Socket self, uint8_t* buf, int size);
  */
 int
 Socket_write(Socket self, uint8_t* buf, int size);
-
+int Socket_dump_write_data(uint8_t *buf, int size);
 /**
  * \brief Get the address of the peer application (IP address and port number)
  *

@@ -167,12 +167,15 @@ sendBuffer(CotpConnection* self)
     int writeBufferPosition = ByteBuffer_getSize(self->writeBuffer);
 
     bool retVal = false;
-
     int sentBytes;
-
+	/*	
+	ByteBuffer_dumpData(
+			ByteBuffer_getBuffer(self->writeBuffer),
+			ByteBuffer_getSize(self->writeBuffer)
+			);
+	*/
     do {
         sentBytes = Socket_write(self->socket, ByteBuffer_getBuffer(self->writeBuffer), writeBufferPosition);
-
         if (sentBytes == -1)
             goto exit_function;
 
@@ -646,7 +649,7 @@ CotpConnection_readToTpktBuffer(CotpConnection* self)
     if (bufPos < 4) {
 
         readBytes = Socket_read(self->socket, buffer + bufPos, 4 - bufPos);
-
+		
         if (readBytes < 0)
             goto exit_closed;
 
@@ -679,7 +682,7 @@ CotpConnection_readToTpktBuffer(CotpConnection* self)
     }
 
     readBytes = Socket_read(self->socket, buffer + bufPos, self->packetSize - bufPos);
-
+	//Socket_dump_read_data(buffer, self->packetSize);
     if (readBytes < 0)
         goto exit_closed;
 

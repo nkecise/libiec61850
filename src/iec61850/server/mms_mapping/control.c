@@ -1264,14 +1264,12 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
         goto free_and_return;
 
     char* varName =  MmsMapping_getNextNameElement(objectName);
-
-    if (varName != NULL) {
-
+    if (varName != NULL) 
+	{
         bool foundVar = false;
-
         char* nextVarName = varName;
-
-        do {
+        do 
+		{
             if (doesElementEquals(varName, "Oper") ||
                 doesElementEquals(varName, "SBO") ||
                 doesElementEquals(varName, "SBOw") ||
@@ -1283,21 +1281,15 @@ Control_writeAccessControlObject(MmsMapping* self, MmsDomain* domain, char* vari
             }
 
             nextVarName  = MmsMapping_getNextNameElement(varName);
-
             if (nextVarName != NULL)
                 varName = nextVarName;
 
         } while (nextVarName != NULL);
-
         if (foundVar == false)
             varName = NULL;
     }
-
-
     if (DEBUG_IED_SERVER)
         printf("IED_SERVER: write access control: objectName: (%s) varName: (%s)\n", objectName, varName);
-
-
     if (varName == NULL) {
         indication = DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
         goto free_and_return;

@@ -1873,10 +1873,12 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
                 if (sg != NULL) {
                     uint32_t val = MmsValue_toUint32(value);
 
-                    if ((val > 0) && (val <= sg->sgcb->numOfSGs)) {
-                        if (val != sg->sgcb->actSG) {
-
-                            if (sg->actSgChangedHandler != NULL) {
+                    if ((val > 0) && (val <= sg->sgcb->numOfSGs)) 
+					{
+                        if (val != sg->sgcb->actSG) 
+						{
+                            if (sg->actSgChangedHandler != NULL) 
+							{
                                 if (sg->actSgChangedHandler(sg->actSgChangedHandlerParameter, sg->sgcb,
                                         (uint8_t) val, (ClientConnection) connection))
                                 {
@@ -1888,7 +1890,6 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
                                     MmsValue_setUint8(actSg, sg->sgcb->actSG);
                                     MmsValue_setUtcTimeMs(lActTm, Hal_getTimeInMs());
                                 }
-
                                 else
                                     return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
                             }

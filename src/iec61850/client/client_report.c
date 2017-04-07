@@ -31,7 +31,7 @@
 
 #include "libiec61850_platform_includes.h"
 
-#include <inttypes.h>
+//#include <inttypes.h>
 
 struct sClientReport
 {
@@ -433,10 +433,10 @@ private_IedConnection_handleReport(IedConnection self, MmsValue* value)
 
         matchingReport->hasTimestamp = true;
         matchingReport->timestamp = MmsValue_getBinaryTimeAsUtcMs(timeStampValue);
-
+		/*
         if (DEBUG_IED_CLIENT)
             printf("IED_CLIENT: report has timestamp %" PRIu64 "\n", matchingReport->timestamp);
-
+		*/
         inclusionIndex++;
     }
 

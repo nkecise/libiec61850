@@ -1,7 +1,7 @@
 UNAME := $(shell uname)
 
 MIPSEL_TOOLCHAIN_PREFIX=mipsel-openwrt-linux-
-ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabihf-
+ARM_TOOLCHAIN_PREFIX=arm-xilinx-linux-gnueabi-
 #ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabi-
 #ARM_TOOLCHAIN_PREFIX=arm-poky-linux-gnueabi-
 #ARM_TOOLCHAIN_PREFIX=arm-linux-gnueabi-

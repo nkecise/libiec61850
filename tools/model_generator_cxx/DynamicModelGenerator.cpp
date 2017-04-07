@@ -17,9 +17,9 @@ int GenerateDynamicConfig(
 	pSCLParser->SetAPName(pApName);
 	pSCLParser->SetIEDName(pIedName);
 	if(pSCLParser->LoadFile())
-		return(1);
+		return(ERROR_LOAD_FILE);
 	if(pSCLParser->ParseFile())
-		return(2);
+		return(ERROR_PARSE_FILE);
 	pSCLParser->UnloadFile();
 	pSCLParser->GetCfgCtx(ctx);
 

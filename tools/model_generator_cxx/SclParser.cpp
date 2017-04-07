@@ -307,15 +307,15 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 {
 	ctx += "LC(";
 	ctx += string(xnLogCtrl.attribute("name").value()) + " ";
-	if(xnLogCtrl.attribute("dataSet"))
-		ctx += string(xnLogCtrl.attribute("dataSet").value());
+	if(xnLogCtrl.attribute("datSet"))
+		ctx += string(xnLogCtrl.attribute("datSet").value());
 	else
 		ctx += "-";
 	ctx += " ";
 	//
 	if(xnLogCtrl.attribute("logName"))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
-			+ xnLN.attribute("name").value() + "$"
+			+ xnLN.attribute("lnClass").value() + "$"
 			+ xnLogCtrl.attribute("logName").value();
 	else
 		ctx += "-";
@@ -350,6 +350,7 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 	}
 	else
 		ctx += "1);";
+	ctx += "\n";
 
 	return(0);
 }
@@ -405,13 +406,15 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 	ctx += " ";
 	//
 	ctx += string(xnRptCtrl.attribute("confRev").value()) + " ";
-	if(xnRptCtrl.child("TrgOps"))
-		ctx += string(GetRptTrgOpt(xnRptCtrl.child("TrgOps"), val[1])) + " ";
+	ctx += string(GetRptTrgOpt(xnRptCtrl, val[1])) + " ";
 	//
 	if(xnRptCtrl.child("OptFields"))
 		ctx += string(GetRptOptFld(xnRptCtrl.child("OptFields"), val[2])) + " ";
 	if(xnRptCtrl.attribute("bufTime"))
 		ctx += string(xnRptCtrl.attribute("bufTime").value()) + " ";
+	else
+		ctx += "0";
+	ctx += " ";
 	if(xnRptCtrl.attribute("intgPd"))
 		ctx += string(xnRptCtrl.attribute("intgPd").value());
 	else
@@ -422,26 +425,31 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 char *CSCLParser::GetRptTrgOpt(const pugi::xml_node& xnRpt, char *val)
 {
 	int value = 0;
-
-	if(xnRpt.attribute("dchg"))
-		if(!strcmp(xnRpt.attribute("dchg").value(), "true"))
-			value += 1;
-	if(xnRpt.attribute("qchg"))
-		if(!strcmp(xnRpt.attribute("qchg").value(), "true"))
-			value += 2;
-	if(xnRpt.attribute("dupd"))
-		if(!strcmp(xnRpt.attribute("dupd").value(), "true"))
-			value += 4;
-	if(xnRpt.attribute("period"))
-		if(!strcmp(xnRpt.attribute("period").value(), "true"))
-			value += 8;
-	if(xnRpt.attribute("gi"))
+	pugi::xml_node xnTrgOpt = xnRpt.child("TrgOps");
+	if(xnTrgOpt)
 	{
-		if(!strcmp(xnRpt.attribute("gi").value(), "true"))
+		if(xnTrgOpt.attribute("dchg"))
+			if(!strcmp(xnTrgOpt.attribute("dchg").value(), "true"))
+				value += 1;
+		if(xnTrgOpt.attribute("qchg"))
+			if(!strcmp(xnTrgOpt.attribute("qchg").value(), "true"))
+				value += 2;
+		if(xnTrgOpt.attribute("dupd"))
+			if(!strcmp(xnTrgOpt.attribute("dupd").value(), "true"))
+				value += 4;
+		if(xnTrgOpt.attribute("period"))
+			if(!strcmp(xnTrgOpt.attribute("period").value(), "true"))
+				value += 8;
+		if(xnTrgOpt.attribute("gi"))
+		{
+			if(!strcmp(xnTrgOpt.attribute("gi").value(), "true"))
+				value += 16;
+		}
+		else
 			value += 16;
 	}
 	else
-		value += 16;
+		value = 16;
 	sprintf(val, "%d", value);
 
 	return(val);
