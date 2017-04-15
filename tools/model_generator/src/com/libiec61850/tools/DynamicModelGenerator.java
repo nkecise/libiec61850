@@ -338,6 +338,61 @@ public class DynamicModelGenerator {
         output.print(")"); 
                 
         if (dataAttribute.isBasicAttribute()) {
+           DataModelValue value = dataAttribute.getValue();
+           
+           /* if no value is given use default value for type if present */
+           if (value == null) { 
+        	   value = dataAttribute.getDefinition().getValue();
+        	   
+        	   if (value != null)
+	        	   if (value.getValue() == null)
+	        		   value.updateEnumOrdValue(ied.getTypeDeclarations());        	   
+           }
+           
+           if (value != null) {
+               
+               switch (dataAttribute.getType()) {
+               case ENUMERATED:
+               case INT8:
+               case INT16:
+               case INT32:
+               case INT64:
+                   output.print("=" + value.getIntValue());
+                   break;
+               case INT8U:
+               case INT16U:
+               case INT24U:
+               case INT32U:
+                   output.print("=" + value.getLongValue());
+                   break;
+               case BOOLEAN:
+                   {
+                       Boolean boolVal = (Boolean) value.getValue();
+                       
+                       if (boolVal.booleanValue())
+                           output.print("=1");
+                   }
+                   break;
+               case UNICODE_STRING_255:
+                   output.print("=\"" + value.getValue()+ "\"");
+                   break;
+               case VISIBLE_STRING_32:
+               case VISIBLE_STRING_64:
+               case VISIBLE_STRING_129:
+               case VISIBLE_STRING_255:
+               case VISIBLE_STRING_65:
+                   output.print("=\"" + value.getValue()+ "\"");
+                   break;
+               case FLOAT32:
+               case FLOAT64:
+                   output.print("=" + value.getValue());
+                   break;
+               default:
+                   System.out.println("Unknown default value for " + dataAttribute.getName() + " type: " + dataAttribute.getType());
+                   break;
+               }
+               
+           }
             
             output.println(";");
         } 
