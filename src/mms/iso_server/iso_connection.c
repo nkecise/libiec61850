@@ -545,7 +545,6 @@ IsoConnection_sendMessage(IsoConnection self, ByteBuffer* message, bool handlerM
     IsoSession_createDataSpdu(self->session, sessionBuffer, presentationBuffer);
 
     CotpIndication indication;
-
     indication = CotpConnection_sendDataMessage(self->cotpConnection, sessionBuffer);
 
     if (DEBUG_ISO_SERVER) {

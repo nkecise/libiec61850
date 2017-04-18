@@ -374,30 +374,11 @@ Socket_read(Socket self, uint8_t* buf, int size)
         else
             return -1;
     }
-	/* dump raw data for debugging */
-	//Socket_dump_read_data(buf, bytes_read);
+
+	if(Socket_readHandler)
+		(*Socket_readHandler)(self, buf, size);
 
 	return bytes_read;
-}
-
-int
-Socket_dump_read_data(uint8_t *buf, int size)
-{
-	CHAR szFileName[MAX_PATH];
-	DWORD nRetCode;
-
-	if(! CreateDirectory("RAW_SOCKET_DATA", NULL))
-		if((nRetCode = GetLastError()) != ERROR_ALREADY_EXISTS)
-			return(nRetCode);
-	sprintf(szFileName, ".\\RAW_SOCKET_DATA\\Read_%d_%d", GetTickCount(), size);
-	//
-	FILE *fp = fopen(szFileName, "wb");
-	if(fp)
-	{
-		fwrite(buf, size, 1, fp);
-		fclose(fp);
-	}
-	return(ERROR_SUCCESS);
 }
 
 int
@@ -414,27 +395,10 @@ Socket_write(Socket self, uint8_t* buf, int size)
             bytes_sent = -1;
     }
 
+	if(Socket_writeHandler)
+		(*Socket_writeHandler)(self, buf, size);
+
 	return bytes_sent;
-}
-
-int
-Socket_dump_write_data(uint8_t *buf, int size)
-{
-	CHAR szFileName[MAX_PATH];
-	DWORD nRetCode;
-
-	if(! CreateDirectory("RAW_SOCKET_DATA", NULL))
-		if((nRetCode = GetLastError()) != ERROR_ALREADY_EXISTS)
-			return(nRetCode);
-	sprintf(szFileName, ".\\RAW_SOCKET_DATA\\Write_%d_%d", GetTickCount(), size);
-	//
-	FILE *fp = fopen(szFileName, "wb");
-	if(fp)
-	{
-		fwrite(buf, size, 1, fp);
-		fclose(fp);
-	}
-	return(ERROR_SUCCESS);
 }
 
 void

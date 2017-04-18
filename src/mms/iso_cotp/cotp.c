@@ -168,12 +168,7 @@ sendBuffer(CotpConnection* self)
 
     bool retVal = false;
     int sentBytes;
-	/*	
-	ByteBuffer_dumpData(
-			ByteBuffer_getBuffer(self->writeBuffer),
-			ByteBuffer_getSize(self->writeBuffer)
-			);
-	*/
+
     do {
         sentBytes = Socket_write(self->socket, ByteBuffer_getBuffer(self->writeBuffer), writeBufferPosition);
         if (sentBytes == -1)
