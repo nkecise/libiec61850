@@ -1,18 +1,18 @@
 #
 # build DynamicModelGenerator
 #
-PROJECT = genconfig
+PROJECT = modgen
 
 # objects
 LIB_OBJECTS	= DynamicModelGenerator.o pugixml.o SclParser.o AttributeType.o Utils.o
 APP_OBJECTS	= test.o
 
 # cflags & lfalgs
-CFLAGS = -I"pugixml"
+CFLAGS = -I"pugixml" -Wall
 LFLAGS = 
 
 # target
-all:lib$(PROJECT).so test
+all:$(PROJECT)
 
 # build rules
 VPATH = ./pugixml
@@ -26,8 +26,8 @@ VPATH = ./pugixml
 %.o:%.cc
 	$(CXX) -c -g -fPIC $(CFLAGS) $< -o $*.o
 
-lib$(PROJECT).so:$(LIB_OBJECTS)
-	$(CXX) $(LIB_OBJECTS) -shared -pthread -o lib$(PROJECT).so
+$(PROJECT):$(LIB_OBJECTS)
+	$(CXX) $(LIB_OBJECTS) -pthread -o $(PROJECT)
 
 test:$(APP_OBJECTS)
 	$(CXX) $(APP_OBJECTS) -o test

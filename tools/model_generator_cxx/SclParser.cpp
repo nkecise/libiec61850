@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "SclParser.h"
 #include "Error.h"
+#include "AttributeType.h"
 
 CSCLParser::CSCLParser()
 {
@@ -67,7 +68,7 @@ int CSCLParser::ParseFile()
 	if(iedName.size())
 	{
 		memset(xpath, 0x00, sizeof(xpath));
-		sprintf(xpath, "/SCL/IED[@name=\"%s\"]", iedName.c_str());
+		sprintf(xpath, "/SCL/IED[@name='%s']", iedName.c_str());
 		xnIED = doc.select_single_node(xpath).node();
 	}
 	else
@@ -117,12 +118,23 @@ int CSCLParser::ParseIED(const pugi::xml_node& xnIED)
 		+ "){\n";
 	//
 	pugi::xml_node xnAP;
+	bool b = false;
 	if(apName.size())
-		xnAP = xnIED.find_child_by_attribute(
-				"AccessPoint", apName.c_str());
+	{
+		for(xnAP = xnIED.child("AccessPoint"); xnAP;
+				xnAP = xnAP.next_sibling())
+		{
+			printf("%s\n", xnAP.attribute("name").value());
+			if(!strcmp(xnAP.attribute("name").value(), apName.c_str()))
+			{
+				b = true;
+				break;
+			}
+		}
+	}
 	else
 		xnAP = xnIED.child("AccessPoint");
-	if(!xnAP)
+	if(!xnAP || !b)
 		return(ERROR_MISSING_AP);
 	apName = xnAP.attribute("name").value();
 	//
@@ -133,8 +145,6 @@ int CSCLParser::ParseIED(const pugi::xml_node& xnIED)
 	ParseAccessPoint(xnAP);
 	ctx += "}";
 
-	printf("%s\n", ctx.c_str());
-
 	return(0);
 }
 
@@ -144,10 +154,13 @@ int CSCLParser::ParseAccessPoint(const pugi::xml_node& xnAP)
 
 	for(; xnLDevice; xnLDevice = xnLDevice.next_sibling("LDevice"))
 	{
+		xnCurLD = xnLDevice;
 		ctx += std::string("LD(") + xnLDevice.attribute("inst").value() + "){\n";
 		ParseLDevice(xnLDevice);
 		ctx += "}\n";
 	}
+
+	return(0);
 }
 
 int CSCLParser::ParseLDevice(const pugi::xml_node& xnLDevice)
@@ -163,6 +176,7 @@ int CSCLParser::ParseLDevice(const pugi::xml_node& xnLDevice)
 	pugi::xml_node xnLN = xnLDevice.child("LN");
 	for(; xnLN; xnLN = xnLN.next_sibling("LN"))
 	{
+		xnCurLN = xnLN;
 		ctx += std::string("LN(") 
 			+ xnLN.attribute("prefix").value()
 			+ xnLN.attribute("lnClass").value() 
@@ -177,6 +191,7 @@ int CSCLParser::ParseLDevice(const pugi::xml_node& xnLDevice)
 
 int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 {
+	bool pushed = false;
 	pugi::xml_node xnSGCB = xnLN.child("SettingControl");
 	if(xnSGCB)
 		ParseSGCB(xnSGCB);
@@ -185,14 +200,39 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 	if(mLNType.find(lnType) == mLNType.end())
 		return(ERROR_MISSING_LNTYPE);
 	pugi::xml_node xnLNType = mLNType.find(lnType)->second;
-	for(pugi::xml_node xnDO = xnLNType.child("DO"); xnDO; xnDO = xnDO.next_sibling("DO"))
+	for(pugi::xml_node xnDO = xnLNType.child("DO"); 
+			xnDO; xnDO = xnDO.next_sibling("DO"))
 	{
+		pugi::xml_node xnDOI = xnLN.find_child_by_attribute(
+				"DOI", "name", xnDO.attribute("name").value());
+		if(xnDOI)
+		{
+			stkDOI.push(xnDOI);
+			pushed = true;
+			/*
+			fprintf(stderr, "PUSH: %s\n",
+					xnDOI.attribute("name").value());
+					*/
+		}
+		else
+			pushed = false;
+		//
 		ctx += std::string("DO(")
 			+ xnDO.attribute("name").value() + " "
 			+ string(xnDO.attribute("count") ? xnDO.attribute("count").value() : "0")
 			+ "){\n";
-		ParseDO(xnDO);
+		ParseDO(xnDO, false);
 		ctx += "}\n";
+		//
+		if(pushed)
+		{
+			/*
+			pugi::xml_node xnT = stkDOI.top();
+			fprintf(stderr, "POP: %s\n\n",
+					xnT.attribute("name").value());
+					*/
+			stkDOI.pop();
+		}
 	}
 	/* DataSet */
 	for(pugi::xml_node xnDataSet = xnLN.child("DataSet"); xnDataSet;
@@ -224,6 +264,227 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 	}
 
 	return(0);
+}
+
+int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
+{
+	bool pushed = false;
+	char *doType = (char *)xnDO.attribute("type").value();
+	if(mDOType.find(doType) == mDOType.end())
+		return(ERROR_MISSING_DOTYPE);
+	pugi::xml_node xnDOType = mDOType.find(doType)->second;
+
+	for(pugi::xml_node xnSDO = xnDOType.child("SDO"); xnSDO; 
+		xnSDO = xnSDO.next_sibling("SDO"))
+	{
+		if(! stkDOI.empty())
+		{
+			pugi::xml_node xnParent = stkDOI.top();
+			pugi::xml_node xnChild = xnParent.find_child_by_attribute(
+					"SDI", "name", xnSDO.attribute("name").value());
+			if(xnChild)
+			{
+				stkDOI.push(xnChild);
+				pushed = true;
+				/*
+				fprintf(stderr, "PUSH: %s\n",
+						xnChild.attribute("name").value());
+						*/
+			}
+			else
+				pushed = false;
+		}
+		//
+		ctx += string("DO(")
+			+ xnSDO.attribute("name").value() + " "
+			+ string(xnSDO.attribute("count") ? xnSDO.attribute("count").value() : "0")
+			+ "){\n";
+		//
+		ParseDO(xnSDO, true);
+		ctx += "}\n";
+		//
+		if(pushed)
+		{
+			/*
+			pugi::xml_node xnT = stkDOI.top();
+			fprintf(stderr, "POP: %s\n", 
+					xnT.attribute("name").value());
+					*/
+			stkDOI.pop();
+		}
+	}
+	/* DA */
+	char fc[16], trgopt[16];
+	for(pugi::xml_node xnDA = xnDOType.child("DA"); xnDA; xnDA = xnDA.next_sibling("DA"))
+	{
+		GetDAFC(xnDA, fc);
+		GetDATrigOpt(xnDA, trgopt);
+		ParseDA(xnDA, fc, trgopt);
+	}
+
+	return(0);
+}
+
+int CSCLParser::ParseDA(
+		const pugi::xml_node& xnDA, 
+		const char *fc, 
+		const char *trgopt
+		)
+{
+	char *daType = (char *)xnDA.attribute("type").value();
+	char *daBType =(char *)xnDA.attribute("bType").value();
+	char val[4][64];
+	string daVal;
+	bool pushed = false;
+	int type = 0;
+	
+	if(!strcmp(daBType, "Struct"))
+	{/* composite type */
+		pugi::xml_node xnDAType;
+		if(mDAType.find(daType) == mDAType.end())
+			return(ERROR_MISSING_DATYPE);
+		xnDAType = mDAType.find(daType)->second;
+		ctx += string("DA(")
+			+ xnDA.attribute("name").value() + " "
+			+ GetDACount(xnDA, val[0]) + " "
+			+ GetDAType(xnDA, val[1], &type) + " "
+			+ fc + " "
+			+ trgopt + " "
+			+ GetDASAddr(xnDA, val[3])
+			+ "){\n";
+		//
+		if(! stkDOI.empty())
+		{
+			pugi::xml_node xnParent = stkDOI.top();
+			if(xnParent)
+			{
+				pugi::xml_node xnChild = xnParent.find_child_by_attribute(
+						"SDI", "name", xnDA.attribute("name").value());
+				if(xnChild)
+				{
+					stkDOI.push(xnChild);
+					pushed = true;
+					//fprintf(stderr, "PUSH: %s\n", xnDA.attribute("name").value());
+				}
+				else
+					pushed = false;
+			}
+		}
+		//
+		for(pugi::xml_node xnBDA = xnDAType.child("BDA"); xnBDA;
+				xnBDA = xnBDA.next_sibling("BDA"))
+		{
+			ParseDA(xnBDA, fc, trgopt);
+		}
+		ctx += "}\n";
+		//
+		if(pushed)
+		{
+			/*
+			pugi::xml_node xnT = stkDOI.top();
+			fprintf(stderr, "POP: %s\n", 
+					xnT.attribute("name").value());
+					*/
+			stkDOI.pop();
+		}
+	}
+	else
+	{
+		ctx += string("DA(")
+			+ xnDA.attribute("name").value() + " "
+			+ GetDACount(xnDA, val[0]) + " "
+			+ GetDAType(xnDA, val[1], &type) + " "
+			+ fc + " "
+			+ trgopt + " "
+			+ GetDASAddr(xnDA, val[3])
+			+ ")";
+		if(GetDAVal(daVal, xnDA))
+			ctx += daVal;
+		ctx += ";\n";
+	}
+
+	return(0);
+}
+
+char *CSCLParser::GetDAVal(string& mval, const pugi::xml_node& xnDA)
+{
+	char ctype[64];
+	int ntype = -1;
+	pugi::xml_node xnDAI, xnVal;
+
+	/* default for Val in DataTypeTemplates */
+	xnVal = xnDA.child("Val");
+	/* DA was instantitated */
+	if(! stkDOI.empty())
+	{
+		pugi::xml_node xnParent = stkDOI.top();
+		if(xnParent)
+		{
+			xnDAI = xnParent.find_child_by_attribute(
+					"DAI", "name", xnDA.attribute("name").value());
+			if(xnDAI)
+				xnVal = xnDAI.child("Val");
+		}
+	}
+	if(xnVal)
+	{
+		GetDAType(xnDA, ctype, &ntype);				
+		switch(ntype)
+		{
+			case ENUMERATED:
+				mval += string("=") + GetEnumOrd(xnDA, xnVal);
+				break;
+			case INT8:
+			case INT16:
+			case INT32:
+			case INT64:
+				mval += string("=") + xnVal.text().get();
+				break;
+			case INT8U:
+			case INT16U:
+			case INT24U:
+			case INT32U:
+				mval += string("=") + xnVal.text().get();
+				break;
+			case FLOAT32:
+			case FLOAT64:
+				mval += string("=") + xnVal.text().get();
+				break;
+			case UNICODE_STRING_255:
+			case VISIBLE_STRING_32:
+			case VISIBLE_STRING_64:
+			case VISIBLE_STRING_129:
+			case VISIBLE_STRING_255:
+			case VISIBLE_STRING_65:
+				mval += string("=\"") + xnVal.text().get()
+						+ string("\"");
+				break;
+		}
+	}
+
+	return((char *)mval.c_str());
+}
+
+char *CSCLParser::GetEnumOrd(
+		const pugi::xml_node& xnDA, const pugi::xml_node& xnV)
+{
+	const char *v = xnV.text().get();
+	if(!v)
+		return("");
+	pugi::xml_node xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
+	if(!xnEnumType)
+		return("");
+	pugi::xml_node xnEnumVal;
+	for(xnEnumVal = xnEnumType.child("EnumVal"); xnEnumVal;
+			xnEnumVal = xnEnumVal.next_sibling("EnumVal"))
+	{
+		if(!strcmp(xnEnumVal.text().get(), v))
+			break;
+	}
+	if(xnEnumVal)
+		return((char *)xnEnumVal.attribute("ord").value());
+	else
+		return("");
 }
 
 int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
@@ -378,6 +639,8 @@ int CSCLParser::ParseRptCtrl(const pugi::xml_node& xnRptCtrl)
 	}
 	else
 		DumpRptInfo(xnRptCtrl, "");
+
+	return(0);
 }
 
 void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
@@ -536,77 +799,6 @@ int CSCLParser::ParseDataSet(const pugi::xml_node& xnDataSet)
 	return(0);
 }
 
-int CSCLParser::ParseDO(const pugi::xml_node& xnDO)
-{
-	char *doType = (char *)xnDO.attribute("type").value();
-	if(mDOType.find(doType) == mDOType.end())
-		return(ERROR_MISSING_DOTYPE);
-	pugi::xml_node xnDOType = mDOType.find(doType)->second;
-	/* SDO */
-	for(pugi::xml_node xnSDO = xnDOType.child("SDO"); xnSDO; 
-		xnSDO = xnSDO.next_sibling("SDO"))
-	{
-		ctx += string("DO(")
-			+ xnSDO.attribute("name").value() + " "
-			+ string(xnSDO.attribute("count") ? xnSDO.attribute("count").value() : "0")
-			+ "){\n";
-		ParseDO(xnSDO);
-		ctx += "}\n";
-	}
-	/* DA */
-	char fc[16], trgopt[16];
-	for(pugi::xml_node xnDA = xnDOType.child("DA"); xnDA; xnDA = xnDA.next_sibling("DA"))
-	{
-		GetDAFC(xnDA, fc);
-		GetDATrigOpt(xnDA, trgopt);
-		ParseDA(xnDA, fc, trgopt);
-	}
-
-	return(0);
-}
-
-int CSCLParser::ParseDA(const pugi::xml_node& xnDA, const char *fc, const char *trgopt)
-{
-	char *daType = (char *)xnDA.attribute("type").value();
-	char *daBType =(char *)xnDA.attribute("bType").value();
-	char val[4][64];
-	
-	if(!strcmp(daBType, "Struct"))
-	{/* composite type */
-		pugi::xml_node xnDAType;
-		if(mDAType.find(daType) == mDAType.end())
-			return(ERROR_MISSING_DATYPE);
-		xnDAType = mDAType.find(daType)->second;
-		ctx += string("DA(")
-			+ xnDA.attribute("name").value() + " "
-			+ GetDACount(xnDA, val[0]) + " "
-			+ GetDAType(xnDA, val[1]) + " "
-			+ fc + " "
-			+ trgopt + " "
-			+ GetDASAddr(xnDA, val[3])
-			+ "){\n";
-		for(pugi::xml_node xnBDA = xnDAType.child("BDA"); xnBDA;
-				xnBDA = xnBDA.next_sibling("BDA"))
-		{
-			ParseDA(xnBDA, fc, trgopt);
-		}
-		ctx += "}\n";
-	}
-	else
-	{
-		ctx += string("DA(")
-			+ xnDA.attribute("name").value() + " "
-			+ GetDACount(xnDA, val[0]) + " "
-			+ GetDAType(xnDA, val[1]) + " "
-			+ fc + " "
-			+ trgopt + " "
-			+ GetDASAddr(xnDA, val[3])
-			+ ");\n";
-	}
-
-	return(0);
-}
-
 char *CSCLParser::GetDACount(const pugi::xml_node& xnDA, char *val)
 {
 	strcpy(val, xnDA.attribute("count") ? xnDA.attribute("count").value() : "0");
@@ -659,6 +851,24 @@ void CSCLParser::UnloadFile()
 void CSCLParser::GetCfgCtx(std::string& _ctx_)
 {
 	_ctx_ = ctx;
+}
+
+bool CSCLParser::StackPush(pugi::xml_node& xnNode)
+{
+	return(true);
+}
+
+pugi::xml_node CSCLParser::StackPop()
+{
+	pugi::xml_node xnNode;
+
+	if(! stkDOI.empty())
+	{
+		xnNode = stkDOI.top();
+		stkDOI.pop();
+	}
+
+	return(xnNode);
 }
 
 CSCLParser::~CSCLParser()

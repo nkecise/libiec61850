@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "DynamicModelGenerator.h"
 #include "SclParser.h"
+#include "Error.h"
 
 int GenerateDynamicConfig(
 		const char *pSclName, const char *pIedName,
@@ -80,9 +81,24 @@ int main(int argc, char *argv[])
 				strncpy(szOutName, argv[i+1], sizeof(szOutName)-1);
 		}
 	}
+	fprintf(stderr, "%s, %s, %s\n",
+			szIedName, szApName, szOutName);
 	//
 	std::string ctx;
 	GenerateDynamicConfig(szSclName, szIedName, szApName, ctx);
+	if(strlen(szOutName))
+	{
+		FILE *fp = fopen(szOutName, "w");
+		if(fp)
+		{
+			fwrite(ctx.c_str(), 1, ctx.size(), fp);
+			fclose(fp);
+		}
+		else
+			return(ERROR_OPEN_FILE);
+	}
+	else
+		fprintf(stdout, "%s\n", ctx.c_str());
 
 	return(0);
 }

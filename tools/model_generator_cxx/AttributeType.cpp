@@ -7,7 +7,7 @@
 #include "AttributeType.h"
 #include "SclParser.h"
 
-char *CSCLParser::GetDAType(const pugi::xml_node& xnDA, char *val)
+char *CSCLParser::GetDAType(const pugi::xml_node& xnDA, char *val, int *i)
 {
 	char *type = (char *)xnDA.attribute("bType").value();
 	int nType = -1;
@@ -77,6 +77,7 @@ char *CSCLParser::GetDAType(const pugi::xml_node& xnDA, char *val)
 	else if(!strcmp(type, "Struct"))
 		nType = CONSTRUCTED;
 	sprintf(val, "%d", nType);
+	*i = nType;
 
 	return(val);
 }
