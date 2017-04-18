@@ -408,7 +408,7 @@ int CSCLParser::ParseDA(
 
 char *CSCLParser::GetDAVal(string& mval, const pugi::xml_node& xnDA)
 {
-	char ctype[64];
+	char ctype[64], t[64];
 	int ntype = -1;
 	pugi::xml_node xnDAI, xnVal;
 
@@ -428,7 +428,7 @@ char *CSCLParser::GetDAVal(string& mval, const pugi::xml_node& xnDA)
 	}
 	if(xnVal)
 	{
-		GetDAType(xnDA, ctype, &ntype);				
+		GetDAType(xnDA, ctype, &ntype);
 		switch(ntype)
 		{
 			case ENUMERATED:
@@ -448,7 +448,8 @@ char *CSCLParser::GetDAVal(string& mval, const pugi::xml_node& xnDA)
 				break;
 			case FLOAT32:
 			case FLOAT64:
-				mval += string("=") + xnVal.text().get();
+				sprintf(t, "%f", atof(xnVal.text().get()));
+				mval += string("=") + t;
 				break;
 			case UNICODE_STRING_255:
 			case VISIBLE_STRING_32:
