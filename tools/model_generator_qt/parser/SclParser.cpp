@@ -523,7 +523,7 @@ char *CSCLParser::GetEnumOrd(
 {
 	const char *v = xnV.text().get();
 	if(!v)
-		return("0");
+		return("-1");
 	pugi::xml_node xnEnumType;
 	if(mEnumType.find(xnDA.attribute("name").value()) != mEnumType.end())
 		xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
@@ -537,13 +537,14 @@ char *CSCLParser::GetEnumOrd(
 	for(xnEnumVal = xnEnumType.child("EnumVal"); xnEnumVal;
 			xnEnumVal = xnEnumVal.next_sibling("EnumVal"))
 	{
-		if(!strcmp(xnEnumVal.text().get(), v))
+		if((!strcmp(xnEnumVal.text().get(), v)) 
+				|| !strcmp(v, xnEnumVal.attribute("ord").value()))
 			break;
 	}
 	if(xnEnumVal)
 		return((char *)xnEnumVal.attribute("ord").value());
 	else
-		return("0");
+		return("-1");
 }
 
 int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
