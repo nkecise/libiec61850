@@ -117,6 +117,8 @@ int CSCLParser::ParseFile()
 	pugi::xml_node xnIED;
 	char xpath[256];
 
+	ctx.clear();
+
 	if(iedName.size())
 	{
 		memset(xpath, 0x00, sizeof(xpath));
@@ -522,9 +524,15 @@ char *CSCLParser::GetEnumOrd(
 	const char *v = xnV.text().get();
 	if(!v)
 		return("0");
-	pugi::xml_node xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
-	if(!xnEnumType)
+	pugi::xml_node xnEnumType;
+	if(mEnumType.find(xnDA.attribute("name").value()) != mEnumType.end())
+		xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
+	else
+	{
+		fprintf(stderr, "%s,%d: Missing EnumType: %s\n", 
+			__FILE__, __LINE__, xnDA.attribute("name").value());
 		return("0");
+	}
 	pugi::xml_node xnEnumVal;
 	for(xnEnumVal = xnEnumType.child("EnumVal"); xnEnumVal;
 			xnEnumVal = xnEnumVal.next_sibling("EnumVal"))
@@ -698,8 +706,11 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 {
 	char val[2][8];
 
+	// name
 	ctx += string("RC(") + xnRptCtrl.attribute("name").value() + index + " ";
-	if(xnRptCtrl.attribute("rptID"))
+	// rptid
+	if(xnRptCtrl.attribute("rptID") &&
+			strlen(xnRptCtrl.attribute("rptID").value()))
 		ctx += xnRptCtrl.attribute("rptID").value();
 	else
 		ctx += "-";
@@ -725,7 +736,7 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 	if(xnRptCtrl.child("OptFields"))
 		ctx += string(GetRptOptFld(xnRptCtrl.child("OptFields"), val[2])) + " ";
 	if(xnRptCtrl.attribute("bufTime"))
-		ctx += string(xnRptCtrl.attribute("bufTime").value()) + " ";
+		ctx += string(xnRptCtrl.attribute("bufTime").value());
 	else
 		ctx += "0";
 	ctx += " ";

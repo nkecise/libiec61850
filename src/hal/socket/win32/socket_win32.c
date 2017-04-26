@@ -375,8 +375,8 @@ Socket_read(Socket self, uint8_t* buf, int size)
             return -1;
     }
 
-	if(Socket_readHandler)
-		(*Socket_readHandler)(self, buf, size);
+	if(pSocket_readHandler)
+		(*pSocket_readHandler)(self, buf, size);
 
 	return bytes_read;
 }
@@ -395,8 +395,8 @@ Socket_write(Socket self, uint8_t* buf, int size)
             bytes_sent = -1;
     }
 
-	if(Socket_writeHandler)
-		(*Socket_writeHandler)(self, buf, size);
+	if(pSocket_writeHandler)
+		(*pSocket_writeHandler)(self, buf, size);
 
 	return bytes_sent;
 }

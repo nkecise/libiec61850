@@ -65,6 +65,8 @@ int CSCLParser::ParseFile()
 	pugi::xml_node xnIED;
 	char xpath[256];
 
+	ctx.clear();
+
 	if(iedName.size())
 	{
 		memset(xpath, 0x00, sizeof(xpath));
@@ -260,7 +262,7 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 	for(pugi::xml_node xnGseCtrl = xnLN.child("GSEControl"); xnGseCtrl;
 			xnGseCtrl = xnGseCtrl.next_sibling("GSEControl"))
 	{
-		ParseGseCtrl(xnGseCtrl, xnLN);
+		//ParseGseCtrl(xnGseCtrl, xnLN);
 	}
 
 	return(0);
@@ -305,11 +307,6 @@ int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
 		//
 		if(pushed)
 		{
-			/*
-			pugi::xml_node xnT = stkDOI.top();
-			fprintf(stderr, "POP: %s\n", 
-					xnT.attribute("name").value());
-					*/
 			stkDOI.pop();
 		}
 	}
@@ -471,10 +468,16 @@ char *CSCLParser::GetEnumOrd(
 {
 	const char *v = xnV.text().get();
 	if(!v)
-		return("");
-	pugi::xml_node xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
-	if(!xnEnumType)
-		return("");
+		return("0");
+	pugi::xml_node xnEnumType;
+	if(mEnumType.find(xnDA.attribute("name").value()) != mEnumType.end())
+		xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
+	else
+	{
+		fprintf(stderr, "%s,%d: Missing EnumType: %s\n", 
+			__FILE__, __LINE__, xnDA.attribute("name").value());
+		return("0");
+	}
 	pugi::xml_node xnEnumVal;
 	for(xnEnumVal = xnEnumType.child("EnumVal"); xnEnumVal;
 			xnEnumVal = xnEnumVal.next_sibling("EnumVal"))
@@ -485,7 +488,7 @@ char *CSCLParser::GetEnumOrd(
 	if(xnEnumVal)
 		return((char *)xnEnumVal.attribute("ord").value());
 	else
-		return("");
+		return("0");
 }
 
 int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
@@ -648,8 +651,11 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 {
 	char val[2][8];
 
+	// name
 	ctx += string("RC(") + xnRptCtrl.attribute("name").value() + index + " ";
-	if(xnRptCtrl.attribute("rptID"))
+	// rptid
+	if(xnRptCtrl.attribute("rptID") &&
+			strlen(xnRptCtrl.attribute("rptID").value()))
 		ctx += xnRptCtrl.attribute("rptID").value();
 	else
 		ctx += "-";
@@ -675,7 +681,7 @@ void CSCLParser::DumpRptInfo(const pugi::xml_node& xnRptCtrl, const char *index)
 	if(xnRptCtrl.child("OptFields"))
 		ctx += string(GetRptOptFld(xnRptCtrl.child("OptFields"), val[2])) + " ";
 	if(xnRptCtrl.attribute("bufTime"))
-		ctx += string(xnRptCtrl.attribute("bufTime").value()) + " ";
+		ctx += string(xnRptCtrl.attribute("bufTime").value());
 	else
 		ctx += "0";
 	ctx += " ";
