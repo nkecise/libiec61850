@@ -147,8 +147,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (sscanf((char*) lineBuffer, "LD(%s)", nameString) < 1)
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer,
 										""
@@ -161,8 +161,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                     }
                     else
 					{
-						if(pConfigFileParserHandler)
-							(pConfigFileParserHandler)(
+						if(pConfigFileParser_parseHandler)
+							(*pConfigFileParser_parseHandler)(
 									__FILE__, __LINE__, 
 									currentLine, indendation, (const char *)lineBuffer, 
 									""
@@ -178,8 +178,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (sscanf((char*) lineBuffer, "LN(%s)", nameString) < 1)
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer, ""
 										);
@@ -192,8 +192,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                     }
                     else
 					{
-						if(pConfigFileParserHandler)
-							(pConfigFileParserHandler)(
+						if(pConfigFileParser_parseHandler)
+							(*pConfigFileParser_parseHandler)(
 									__FILE__, __LINE__, 
 									currentLine, indendation, (const char *)lineBuffer, ""
 									);
@@ -237,8 +237,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems < 9) 
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer, "matchedItems<9"
 										);
@@ -269,8 +269,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems < 7) 
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer, "matchedItems<7"
 										);
@@ -292,8 +292,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems < 1) 
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer, "matchedItems<1"
 										);
@@ -316,8 +316,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems < 5) 
 						{
-							if(pConfigFileParserHandler)
-								(pConfigFileParserHandler)(
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
 										__FILE__, __LINE__, 
 										currentLine, indendation, (const char *)lineBuffer, "matchedItems<5"
 										);
@@ -335,11 +335,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 					{
                         if (strcmp(currentLN->name, "LLN0") != 0) 
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"Setting group control is not defined in LLN0"
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										"Setting group control is not defined in LLN0"
+										);
                             goto exit_error;
                         }
 
@@ -350,11 +351,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems < 2)
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"matchedItems<2"
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										"matchedItems<2"
+										);
                             goto exit_error;
 						}
 
@@ -363,11 +365,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 #endif /* (CONFIG_IEC61850_SETTING_GROUPS == 1) */
 
                     else {
-						(pConfigFileParserHandler)(
-								__FILE__, __LINE__, 
-								currentLine, indendation, (const char *)lineBuffer,
-								"Unknown identifier"
-								);
+						if(pConfigFileParser_parseHandler)
+							(*pConfigFileParser_parseHandler)(
+									__FILE__, __LINE__, 
+									currentLine, indendation, (const char *)lineBuffer,
+									"Unknown identifier"
+									);
                         goto exit_error;
                     }
 
@@ -383,11 +386,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (matchedItems != 2) 
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"matchedItems != 2"
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										"matchedItems != 2"
+										);
 							goto exit_error;
 						}
 
@@ -441,11 +445,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                     int32_t intValue;
                                     if (sscanf(valueIndicator + 1, "%i", &intValue) != 1) 
 									{
-										(pConfigFileParserHandler)(
-												__FILE__, __LINE__, 
-												currentLine, indendation, (const char *)lineBuffer,
-												""
-												);
+										if(pConfigFileParser_parseHandler)
+											(*pConfigFileParser_parseHandler)(
+													__FILE__, __LINE__, 
+													currentLine, indendation, (const char *)lineBuffer,
+													""
+													);
 										goto exit_error;
 									}
                                     dataAttribute->mmsValue = MmsValue_newIntegerFromInt32(intValue);
@@ -460,11 +465,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                     uint32_t uintValue;
                                     if (sscanf(valueIndicator + 1, "%u", &uintValue) != 1) 
 									{
-										(pConfigFileParserHandler)(
-												__FILE__, __LINE__, 
-												currentLine, indendation, (const char *)lineBuffer,
-												""
-												);
+										if(pConfigFileParser_parseHandler)
+											(*pConfigFileParser_parseHandler)(
+													__FILE__, __LINE__, 
+													currentLine, indendation, (const char *)lineBuffer,
+													""
+													);
 										goto exit_error;
 									}
                                     dataAttribute->mmsValue = MmsValue_newUnsignedFromUint32(uintValue);
@@ -476,11 +482,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                     float floatValue;
                                     if (sscanf(valueIndicator + 1, "%f", &floatValue) != 1) 
 									{
-										(pConfigFileParserHandler)(
-												__FILE__, __LINE__, 
-												currentLine, indendation, (const char *)lineBuffer,
-												""
-												);
+										if(pConfigFileParser_parseHandler)
+											(*pConfigFileParser_parseHandler)(
+													__FILE__, __LINE__, 
+													currentLine, indendation, (const char *)lineBuffer,
+													""
+													);
 										goto exit_error;
 									}
                                     dataAttribute->mmsValue = MmsValue_newFloat(floatValue);
@@ -492,11 +499,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                     double doubleValue;
                                     if (sscanf(valueIndicator + 1, "%lf", &doubleValue) != 1) 
 									{
-										(pConfigFileParserHandler)(
-												__FILE__, __LINE__, 
-												currentLine, indendation, (const char *)lineBuffer,
-												""
-												);
+										if(pConfigFileParser_parseHandler)
+											(*pConfigFileParser_parseHandler)(
+													__FILE__, __LINE__, 
+													currentLine, indendation, (const char *)lineBuffer,
+													""
+													);
 										goto exit_error;
 									}
                                     dataAttribute->mmsValue = MmsValue_newDouble(doubleValue);
@@ -508,11 +516,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                     int boolean;
                                     if (sscanf(valueIndicator + 1, "%i", &boolean) != 1) 
 									{
-										(pConfigFileParserHandler)(
-												__FILE__, __LINE__, 
-												currentLine, indendation, (const char *)lineBuffer,
-												""
-												);
+										if(pConfigFileParser_parseHandler)
+											(*pConfigFileParser_parseHandler)(
+													__FILE__, __LINE__, 
+													currentLine, indendation, (const char *)lineBuffer,
+													""
+													);
 										goto exit_error;
 									}
                                     dataAttribute->mmsValue = MmsValue_newBoolean((bool) boolean);
@@ -547,11 +556,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if ((matchedItems != 4) || (currentGoCB == NULL)) 
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"(matchedItems != 4) || (currentGoCB == NULL)"
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										"(matchedItems != 4) || (currentGoCB == NULL)"
+										);
 							goto exit_error;
 						}
 
@@ -559,21 +569,23 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         if (strlen(nameString) != 12) 
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"strlen(nameString) != 12"
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										"strlen(nameString) != 12"
+										);
 							goto exit_error;
 						}
 
                         if (StringUtils_createBufferFromHexString(nameString, (uint8_t*) nameString2) != 6)
 						{
-							(pConfigFileParserHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									""
-									);
+							if(pConfigFileParser_parseHandler)
+								(*pConfigFileParser_parseHandler)(
+										__FILE__, __LINE__, 
+										currentLine, indendation, (const char *)lineBuffer,
+										""
+										);
                             goto exit_error;
 						}
 
@@ -587,11 +599,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                     }
                     else
 					{
-						(pConfigFileParserHandler)(
-								__FILE__, __LINE__, 
-								currentLine, indendation, (const char *)lineBuffer,
-								""
-								);
+						if(pConfigFileParser_parseHandler)
+							(*pConfigFileParser_parseHandler)(
+									__FILE__, __LINE__, 
+									currentLine, indendation, (const char *)lineBuffer,
+									""
+									);
                         goto exit_error;
 					}
                 }
@@ -613,11 +626,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                 }
                 else
 				{
-					(pConfigFileParserHandler)(
-							__FILE__, __LINE__, 
-							currentLine, indendation, (const char *)lineBuffer,
-							""
-							);
+					if(pConfigFileParser_parseHandler)
+						(*pConfigFileParser_parseHandler)(
+								__FILE__, __LINE__, 
+								currentLine, indendation, (const char *)lineBuffer,
+								""
+								);
                     goto exit_error;
 				}
             }

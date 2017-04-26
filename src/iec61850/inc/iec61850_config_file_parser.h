@@ -39,7 +39,7 @@ extern "C" {
  *
  * @{
  */
-typedef void (*ConfigFileParserHandler)(
+typedef void (*ConfigFileParser_parseHandler)(
 		const char *src_file, 
 		unsigned int src_line,
 		unsigned int cfg_line,
@@ -47,7 +47,7 @@ typedef void (*ConfigFileParserHandler)(
 		const char *line_buffer,
 		const char *reason
 		);
-extern ConfigFileParserHandler pConfigFileParserHandler;
+extern ConfigFileParser_parseHandler pConfigFileParser_parseHandler;
 
 IedModel*
 ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle);
