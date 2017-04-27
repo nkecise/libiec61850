@@ -23,7 +23,9 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\qrc_GenConfig.obj	\
 		  $(OUTDIR)\GenConfig.res \
 		  $(OUTDIR)\AttributeType.obj $(OUTDIR)\SclParser.obj \
-		  $(OUTDIR)\Utils.obj $(OUTDIR)\pugixml.obj
+		  $(OUTDIR)\Utils.obj $(OUTDIR)\pugixml.obj \
+		  $(OUTDIR)\IedTreeWidget.obj \
+		  $(OUTDIR)\moc_IedTreeWidget.obj
 
 DEPENDS	= 
 
@@ -82,6 +84,9 @@ $(OUTDIR)\moc_GenConfig.cpp : GenConfig.h
 
 $(OUTDIR)\moc_MainFrame.cpp : MainFrame.h
 	$(QTROOT)\bin\moc $(QTDEFINES) $(incpath) -DWIN32 -o $(OUTDIR)\moc_MainFrame.cpp MainFrame.h
+
+$(OUTDIR)\moc_IedTreeWidget.cpp : IedTreeWidget.h
+	$(QTROOT)\bin\moc $(QTDEFINES) $(incpath) -DWIN32 -o $(OUTDIR)\moc_IedTreeWidget.cpp IedTreeWidget.h
 
 ## resource ##
 $(OUTDIR)\qrc_GenConfig.cpp : .\GenConfig.qrc

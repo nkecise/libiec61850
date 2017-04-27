@@ -98,6 +98,7 @@ int CSCLParser::LoadFileWind()
 		fprintf(stderr, "MapViewOfFile: %d\n", nRetCode);
 		CloseHandle(hFile);
 		CloseHandle(hFileMap);
+		return(nRetCode);
 	}
 	//
 	doc.load_buffer(pXml, nFileSizeLow);

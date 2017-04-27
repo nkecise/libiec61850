@@ -1,21 +1,44 @@
-
+/*
+ * File: MainFrame.cpp
+ */
 #include <QtGui>
+#include <QCursor>
 #include "MainFrame.h"
 
 MainWindow::MainWindow()
 {
-	//textEdit = new QTextEdit();
-    //setCentralWidget(textEdit);
+	sclParser = new CSCLParser();
+	msgListWidget = new QListWidget();
+    setCentralWidget(msgListWidget);
 
     createActions();
     createMenus();
     //createToolBars();
     createStatusBar();
-    //createDockWindows();
+    createDockWindows();
+	createPopupMenuEx();
 
     setWindowTitle(tr("GenConfig"));
     setUnifiedTitleAndToolBarOnMac(true);
 	showMaximized();
+
+	connect(iedTreeWidget,
+			SIGNAL(mouseRightButtonRelease(const QPoint&)),
+			this, 
+			SLOT(mouseRightButtonReleased(const QPoint &))
+			);
+	connect(iedTreeWidget, 
+			SIGNAL(customContextMenuRequested(const QPoint &)), 
+			this, SLOT(showPopupMenu(const QPoint &))
+			);
+}
+
+void MainWindow::mouseRightButtonReleased(const QPoint& P)
+{
+	QTreeWidgetItem *item = (QTreeWidgetItem *)iedTreeWidget->itemAt(P);
+	QTreeWidgetItem *root = item->parent();
+	if(root == NULL)
+		return;
 }
 
 void MainWindow::open()
@@ -28,7 +51,6 @@ void MainWindow::open()
 	if(curFileName.isEmpty())
 		return;
 	curFileName.replace("/", "\\");
-	(ui.sclLineEdit)->setText(curFileName);
 	//
 	sclParser->SetSCLName(curFileName.toStdString().c_str());
 #ifdef _WIN32
@@ -42,12 +64,32 @@ void MainWindow::open()
 	}
 	// initialize IED ComboBox
 	sclParser->GetIEDList(mIED);
-	(ui.iedComboBox)->clear();
+	clearIedTreeWidget();
 	for(map<string, pugi::xml_node>::iterator it = mIED.begin();
 			it != mIED.end(); it++)
 	{
-		(ui.iedComboBox)->addItem(it->second.attribute("name").value());
+		pugi::xml_node xnIED = it->second;
+		QTreeWidgetItem *root = new QTreeWidgetItem();
+		root->setText(0, xnIED.attribute("name").value());
+		iedTreeWidget->addTopLevelItem(root);
+		for(pugi::xml_node xnAP = xnIED.child("AccessPoint"); xnAP;
+				xnAP = xnAP.next_sibling("AccessPoint"))
+		{
+			QTreeWidgetItem *child = new QTreeWidgetItem();
+			child->setText(0, xnAP.attribute("name").value());
+			root->addChild(child);
+		}
 	}
+}
+
+void MainWindow::genCfg()
+{
+	QMessageBox::information(this, NULL, "Generate Configuration");
+}
+
+void MainWindow::simulate()
+{
+	QMessageBox::information(this, NULL, "Simulation");
 }
 
 void MainWindow::save()
@@ -96,6 +138,12 @@ void MainWindow::createActions()
     aboutQtAct = new QAction(tr("About &Qt"), this);
     aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
     connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+
+	genCfgAct = new QAction(tr("Generate Configuration"), this);
+	connect(genCfgAct, SIGNAL(triggered()), this, SLOT(genCfg()));
+
+	simAct = new QAction("Simulate", this);
+	connect(simAct, SIGNAL(triggered()), this, SLOT(simulate()));
 }
 
 void MainWindow::createMenus()
@@ -135,46 +183,44 @@ void MainWindow::createStatusBar()
 
 void MainWindow::createDockWindows()
 {
-    QDockWidget *dock = new QDockWidget(tr("Customers"), this);
-    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    customerList = new QListWidget(dock);
-    customerList->addItems(QStringList()
-            << "John Doe, Harmony Enterprises, 12 Lakeside, Ambleton"
-            << "Jane Doe, Memorabilia, 23 Watersedge, Beaton"
-            << "Tammy Shea, Tiblanka, 38 Sea Views, Carlton"
-            << "Tim Sheen, Caraba Gifts, 48 Ocean Way, Deal"
-            << "Sol Harvey, Chicos Coffee, 53 New Springs, Eccleston"
-            << "Sally Hobart, Tiroli Tea, 67 Long River, Fedula");
-    dock->setWidget(customerList);
-    addDockWidget(Qt::RightDockWidgetArea, dock);
+    QDockWidget *dock = new QDockWidget(tr("IED"), this);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea);
+    iedTreeWidget = new CIedTreeWidget(dock);
+	iedTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    dock->setWidget(iedTreeWidget);
+    addDockWidget(Qt::LeftDockWidgetArea, dock);
     viewMenu->addAction(dock->toggleViewAction());
+}
 
-    dock = new QDockWidget(tr("Paragraphs"), this);
-    paragraphsList = new QListWidget(dock);
-    paragraphsList->addItems(QStringList()
-            << "Thank you for your payment which we have received today."
-            << "Your order has been dispatched and should be with you "
-               "within 28 days."
-            << "We have dispatched those items that were in stock. The "
-               "rest of your order will be dispatched once all the "
-               "remaining items have arrived at our warehouse. No "
-               "additional shipping charges will be made."
-            << "You made a small overpayment (less than $5) which we "
-               "will keep on account for you, or return at your request."
-            << "You made a small underpayment (less than $1), but we have "
-               "sent your order anyway. We'll add this underpayment to "
-               "your next bill."
-            << "Unfortunately you did not send enough money. Please remit "
-               "an additional $. Your order will be dispatched as soon as "
-               "the complete amount has been received."
-            << "You made an overpayment (more than $5). Do you wish to "
-               "buy more items, or should we return the excess to you?");
-    dock->setWidget(paragraphsList);
-    addDockWidget(Qt::RightDockWidgetArea, dock);
-    viewMenu->addAction(dock->toggleViewAction());
+void MainWindow::clearIedTreeWidget()
+{
+	for(int i = iedTreeWidget->topLevelItemCount()-1; i >= 0; i--)
+		iedTreeWidget->takeTopLevelItem(i);
+}
 
-    connect(customerList, SIGNAL(currentTextChanged(QString)),
-            this, SLOT(insertCustomer(QString)));
-    connect(paragraphsList, SIGNAL(currentTextChanged(QString)),
-            this, SLOT(addParagraph(QString)));
+void MainWindow::createPopupMenuEx()
+{
+	popMenu = new QMenu(iedTreeWidget);
+	popMenu->addAction(genCfgAct);
+	popMenu->addAction(simAct);
+}
+
+void MainWindow::showPopupMenu(const QPoint& pos)
+{
+	QTreeWidgetItem *item = (QTreeWidgetItem *)iedTreeWidget->itemAt(pos);
+	if(item == NULL)
+		return;
+	QTreeWidgetItem *root = item->parent();
+	if(root == NULL)
+		return;
+	//
+	popMenu->clear();
+	popMenu->addAction(genCfgAct);
+	popMenu->addAction(simAct);
+	popMenu->exec(QCursor::pos());
+}
+
+MainWindow::~MainWindow()
+{
+	delete sclParser;
 }
