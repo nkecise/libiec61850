@@ -1,33 +1,50 @@
-/*
- * File:	MainFrame.h
- */
-#ifndef	MAIN_FRAME_H
-#define	MAIN_FRAME_H
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 
-#include <windows.h>
-#include <QDialog>
-#include <QListWidget>
-#include <QPushButton>
-#include <QStackedWidget>
-#include ".\ui\uic_MainFrame.h"
-#include "SclParser.h"
+#include <QMainWindow>
 
-class MainFrame : public QDialog
+QT_BEGIN_NAMESPACE
+class QAction;
+class QListWidget;
+class QMenu;
+class QTextEdit;
+QT_END_NAMESPACE
+
+class MainWindow : public QMainWindow
 {
-	Q_OBJECT
-	public:
-		MainFrame(QWidget *parent = NULL);
-		~MainFrame();
-	public slots:
-		void selectSclFile();
-		void selectOutFile();
-		void generate();
-		void currentIndexHasChanged(const QString& text);
-	private:
-		Ui::MainFrame	ui;
-		CSCLParser *sclParser;
-		map<string, pugi::xml_node> mIED;
-		map<string, map<string, vector<string>>> mSubNet;
-};
+    Q_OBJECT
 
-#endif	//MAIN_FRAME_H
+public:
+    MainWindow();
+
+private slots:
+	void open();
+    void save();
+    void undo();
+    void about();
+private:
+	QString curFileName;
+
+private:
+    void createActions();
+    void createMenus();
+    void createToolBars();
+    void createStatusBar();
+    void createDockWindows();
+
+    QMenu *fileMenu;
+    QMenu *editMenu;
+    QMenu *viewMenu;
+    QMenu *helpMenu;
+    QToolBar *fileToolBar;
+    QToolBar *editToolBar;
+	QAction *openAct;
+    QAction *saveAct;
+    QAction *undoAct;
+    QAction *aboutAct;
+    QAction *aboutQtAct;
+    QAction *quitAct;
+};
+//! [0]
+
+#endif

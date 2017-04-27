@@ -1,16 +1,16 @@
 /*
  * File: GenConfig.cpp
  */
+#include <QApplication>
 #include "MainFrame.h"
 
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
-	MainFrame	frame;
+	MainWindow frame;
 
 	//QTextCodec::setCodecForTr(QTextCodec::codecForLocale());
     //QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
-	frame.setWindowFlags(Qt::WindowMinimizeButtonHint);
 	frame.setWindowTitle(QString("GenConfig"));
 	frame.show();
 

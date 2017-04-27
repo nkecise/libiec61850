@@ -139,6 +139,11 @@ void CSCLParser::ParseDataTypeTemplates()
 {
 	pugi::xml_node xnRoot;
 
+	mLNType.clear();
+	mDOType.clear();
+	mDAType.clear();
+	mEnumType.clear();
+
 	xnRoot = doc.select_single_node("/SCL/DataTypeTemplates").node();
 	pugi::xml_node xnNode = xnRoot.child("LNodeType");
 	do
@@ -917,6 +922,7 @@ void CSCLParser::ParseIEDSection()
 	pugi::xml_node xnRoot = doc.select_single_node("/SCL").node();
 	if(! xnRoot)
 		return;
+	mIED.clear();
 	for(pugi::xml_node xnIED = xnRoot.child("IED"); xnIED;
 		xnIED = xnIED.next_sibling("IED"))
 	{
@@ -929,6 +935,7 @@ void CSCLParser::ParseCommunicationSection()
 	pugi::xml_node xnRoot = doc.select_single_node("/SCL/Communication").node();
 	if(!xnRoot)
 		return;
+	mSubNet.clear();
 	for(pugi::xml_node xnSubNet = xnRoot.child("SubNetwork"); xnSubNet;
 			xnSubNet = xnSubNet.next_sibling("SubNetwork"))
 	{

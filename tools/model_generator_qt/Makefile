@@ -25,7 +25,7 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\AttributeType.obj $(OUTDIR)\SclParser.obj \
 		  $(OUTDIR)\Utils.obj $(OUTDIR)\pugixml.obj
 
-DEPENDS	= $(GUIDIR)\uic_MainFrame.h
+DEPENDS	= 
 
 ## target ##
 all: $(OUTDIR) $(DEPENDS) $(OUTDIR)\$(PROJECT).exe

@@ -1,33 +1,26 @@
-/*
- * File:	MainFrame.cpp
- */
-#include <QFileDialog>
-#include <QMessageBox>
-#include <string>
-#include <map>
+
+#include <QtGui>
 #include "MainFrame.h"
 
-using namespace std;
-
-MainFrame::MainFrame(QWidget *parent) : QDialog(parent)
+MainWindow::MainWindow()
 {
-    ui.setupUi(this);
-	sclParser = new CSCLParser();
-	//
-	connect(ui.choseSclPushButton, SIGNAL(clicked()), this,
-			SLOT(selectSclFile()));
-	connect(ui.choseCfgPushButton, SIGNAL(clicked()), this,
-			SLOT(selectOutFile()));
-	connect(ui.generatePushButton, SIGNAL(clicked()), this,
-			SLOT(generate()));
-	connect(ui.iedComboBox, SIGNAL(currentIndexChanged(const QString&)),
-			this, SLOT(currentIndexHasChanged(const QString&)));
-	setWindowTitle(tr("GenConfig"));
+	//textEdit = new QTextEdit();
+    //setCentralWidget(textEdit);
+
+    createActions();
+    createMenus();
+    //createToolBars();
+    createStatusBar();
+    //createDockWindows();
+
+    setWindowTitle(tr("GenConfig"));
+    setUnifiedTitleAndToolBarOnMac(true);
+	showMaximized();
 }
 
-void MainFrame::selectSclFile()
+void MainWindow::open()
 {
-	QString curFileName = QFileDialog::getOpenFileName(
+	curFileName = QFileDialog::getOpenFileName(
 			this, tr("Select SCL"), NULL,
 			"SCL Files(*.scd *.icd *.cid);;"
 			"All Files(*.*)"
@@ -49,6 +42,7 @@ void MainFrame::selectSclFile()
 	}
 	// initialize IED ComboBox
 	sclParser->GetIEDList(mIED);
+	(ui.iedComboBox)->clear();
 	for(map<string, pugi::xml_node>::iterator it = mIED.begin();
 			it != mIED.end(); it++)
 	{
@@ -56,69 +50,131 @@ void MainFrame::selectSclFile()
 	}
 }
 
-void MainFrame::selectOutFile()
+void MainWindow::save()
 {
-	char szFileName[256];
-#ifdef _WIN32
-	GetModuleFileName(NULL, szFileName, sizeof(szFileName));
-	PathRemoveFileSpec(szFileName);
-#elif __linux__
-#endif
-	strcat(szFileName, "\\");
-	strcat(szFileName, (ui.iedComboBox)->currentText().toStdString().c_str());
-	QString curFile = QFileDialog::getSaveFileName(
-			this, tr("Output File"), szFileName, "config files(*.cfg);;");
-	if(! curFile.isEmpty())
-	{
-		curFile.replace("/", "\\");
-		(ui.outLineEdit)->setText(curFile);
-	}
 }
 
-void MainFrame::generate()
+void MainWindow::undo()
 {
-	if((ui.sclLineEdit)->text().isEmpty()
-	  || (ui.outLineEdit)->text().isEmpty())
-	{
-		QMessageBox::critical(this, tr("ERROR"), 
-				tr("Select SCL OR Output File First!"));
-		return;
-	}
-	//
-	string ctx;
-	sclParser->SetAPName((ui.apComboBox)->currentText().toStdString().c_str());
-	sclParser->SetIEDName((ui.iedComboBox)->currentText().toStdString().c_str());
-	sclParser->ParseFile();
-	sclParser->GetCfgCtx(ctx);
-	//
-	FILE *fp = fopen((ui.outLineEdit)->text().toStdString().c_str(), "w");
-	if(fp)
-	{
-		fwrite(ctx.c_str(), 1, ctx.size(), fp);
-		fclose(fp);
-	}
-	QString echoStr = QString("Configuration was written to '")
-					+ (ui.outLineEdit)->text()
-					+ "'";
-	QMessageBox::information(this, tr("Information"), echoStr);
 }
 
-void MainFrame::currentIndexHasChanged(const QString& text)
+void MainWindow::about()
 {
-	pugi::xml_node xnIED;
-
-	(ui.apComboBox)->clear();
-	if(mIED.find(text.toStdString()) == mIED.end())
-		return;
-	xnIED = mIED.find(text.toStdString())->second;
-	for(pugi::xml_node xnAP = xnIED.child("AccessPoint"); xnAP;
-			xnAP = xnAP.next_sibling("AccessPoint"))
-	{
-		(ui.apComboBox)->addItem(xnAP.attribute("name").value());
-	}
+   QMessageBox::about(this, tr("About Dock Widgets"),
+            tr("The <b>Dock Widgets</b> example demonstrates how to "
+               "use Qt's dock widgets. You can enter your own text, "
+               "click a customer to add a customer name and "
+               "address, and click standard paragraphs to add them."));
 }
 
-MainFrame::~MainFrame()
+void MainWindow::createActions()
 {
-	delete sclParser;
+    openAct = new QAction(QIcon(":/images/open.png"), tr("&Open..."), this);
+    openAct->setShortcuts(QKeySequence::Open);
+    openAct->setStatusTip(tr("Open..."));
+    connect(openAct, SIGNAL(triggered()), this, SLOT(open()));
+
+    saveAct = new QAction(QIcon(":/images/save.png"), tr("&Save..."), this);
+    saveAct->setShortcuts(QKeySequence::Save);
+    saveAct->setStatusTip(tr("Save the current form letter"));
+    connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
+
+    undoAct = new QAction(QIcon(":/images/undo.png"), tr("&Undo"), this);
+    undoAct->setShortcuts(QKeySequence::Undo);
+    undoAct->setStatusTip(tr("Undo the last editing action"));
+    connect(undoAct, SIGNAL(triggered()), this, SLOT(undo()));
+
+    quitAct = new QAction(tr("&Quit"), this);
+    quitAct->setShortcuts(QKeySequence::Quit);
+    quitAct->setStatusTip(tr("Quit the application"));
+    connect(quitAct, SIGNAL(triggered()), this, SLOT(close()));
+
+    aboutAct = new QAction(tr("&About"), this);
+    aboutAct->setStatusTip(tr("Show the application's About box"));
+    connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
+
+    aboutQtAct = new QAction(tr("About &Qt"), this);
+    aboutQtAct->setStatusTip(tr("Show the Qt library's About box"));
+    connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+}
+
+void MainWindow::createMenus()
+{
+    fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(openAct);
+    fileMenu->addSeparator();
+    fileMenu->addAction(quitAct);
+	/*
+    editMenu = menuBar()->addMenu(tr("&Edit"));
+    editMenu->addAction(undoAct);
+	*/
+    viewMenu = menuBar()->addMenu(tr("&View"));
+
+    menuBar()->addSeparator();
+
+    helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(aboutAct);
+    helpMenu->addAction(aboutQtAct);
+}
+
+void MainWindow::createToolBars()
+{
+    fileToolBar = addToolBar(tr("File"));
+	fileToolBar->addAction(openAct);
+    fileToolBar->addAction(saveAct);
+	/*
+    editToolBar = addToolBar(tr("Edit"));
+    editToolBar->addAction(undoAct);
+	*/
+}
+
+void MainWindow::createStatusBar()
+{
+    statusBar()->showMessage(tr("Ready"));
+}
+
+void MainWindow::createDockWindows()
+{
+    QDockWidget *dock = new QDockWidget(tr("Customers"), this);
+    dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    customerList = new QListWidget(dock);
+    customerList->addItems(QStringList()
+            << "John Doe, Harmony Enterprises, 12 Lakeside, Ambleton"
+            << "Jane Doe, Memorabilia, 23 Watersedge, Beaton"
+            << "Tammy Shea, Tiblanka, 38 Sea Views, Carlton"
+            << "Tim Sheen, Caraba Gifts, 48 Ocean Way, Deal"
+            << "Sol Harvey, Chicos Coffee, 53 New Springs, Eccleston"
+            << "Sally Hobart, Tiroli Tea, 67 Long River, Fedula");
+    dock->setWidget(customerList);
+    addDockWidget(Qt::RightDockWidgetArea, dock);
+    viewMenu->addAction(dock->toggleViewAction());
+
+    dock = new QDockWidget(tr("Paragraphs"), this);
+    paragraphsList = new QListWidget(dock);
+    paragraphsList->addItems(QStringList()
+            << "Thank you for your payment which we have received today."
+            << "Your order has been dispatched and should be with you "
+               "within 28 days."
+            << "We have dispatched those items that were in stock. The "
+               "rest of your order will be dispatched once all the "
+               "remaining items have arrived at our warehouse. No "
+               "additional shipping charges will be made."
+            << "You made a small overpayment (less than $5) which we "
+               "will keep on account for you, or return at your request."
+            << "You made a small underpayment (less than $1), but we have "
+               "sent your order anyway. We'll add this underpayment to "
+               "your next bill."
+            << "Unfortunately you did not send enough money. Please remit "
+               "an additional $. Your order will be dispatched as soon as "
+               "the complete amount has been received."
+            << "You made an overpayment (more than $5). Do you wish to "
+               "buy more items, or should we return the excess to you?");
+    dock->setWidget(paragraphsList);
+    addDockWidget(Qt::RightDockWidgetArea, dock);
+    viewMenu->addAction(dock->toggleViewAction());
+
+    connect(customerList, SIGNAL(currentTextChanged(QString)),
+            this, SLOT(insertCustomer(QString)));
+    connect(paragraphsList, SIGNAL(currentTextChanged(QString)),
+            this, SLOT(addParagraph(QString)));
 }
