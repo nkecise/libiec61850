@@ -6,6 +6,7 @@ PROJECT	= GenConfig
 COMNPATH = 
 GUIDIR	= .\UI
 QTROOT	= D:\Qt\4.8.6
+IEC61850ROOT = D:\gridnt\libiec61850.git.nk\trunk
 VCROOT		= $(VCINSTALLDIR)
 MSSDKROOT	= $(WINDOWSDKDIR)
 cc			= cl.exe
@@ -25,9 +26,12 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\AttributeType.obj $(OUTDIR)\SclParser.obj \
 		  $(OUTDIR)\Utils.obj $(OUTDIR)\pugixml.obj \
 		  $(OUTDIR)\IedTreeWidget.obj \
-		  $(OUTDIR)\moc_IedTreeWidget.obj
+		  $(OUTDIR)\moc_IedTreeWidget.obj \
+		  $(OUTDIR)\61850Handler.obj \
+		  $(OUTDIR)\CentralWidget.obj \
+		  $(OUTDIR)\moc_CentralWidget.obj
 
-DEPENDS	= 
+DEPENDS	= $(GUIDIR)\uic_centralListWidget.h
 
 ## target ##
 all: $(OUTDIR) $(DEPENDS) $(OUTDIR)\$(PROJECT).exe
@@ -35,7 +39,7 @@ all: $(OUTDIR) $(DEPENDS) $(OUTDIR)\$(PROJECT).exe
 ## cflags ##
 ccommon		= -c
 !IFDEF NODEBUG
-cdebug		= -Ox
+cdebug		= -Od
 cvars		= -MT -D_MT
 !ELSE
 cvars		= -MTd -D_MTd
@@ -51,8 +55,19 @@ QTDEFINES	= -DQT_CORE_LIB -DQT_GUI_LIB -DQT_LARGEFILE_SUPPORT
 QTINCPATH	= -I"$(QTROOT)\include\QtCore" -I"$(QTROOT)\include\QtGui" \
 			  -I"$(QTROOT)\include" -I"$(QTROOT)\include\QtWidgets" \
 			  -I"parser\pugixml" -I"parser"
+IEC61850INCPATH = -I"$(IEC61850ROOT)/config" \
+		-I"$(IEC61850ROOT)/src/common/inc" \
+		-I"$(IEC61850ROOT)/src/goose" \
+		-I"$(IEC61850ROOT)/src/hal/inc" \
+		-I"$(IEC61850ROOT)/src/iec61850/inc" \
+		-I"$(IEC61850ROOT)/src/iec61850/inc_private" \
+		-I"$(IEC61850ROOT)/src/mms/inc" \
+		-I"$(IEC61850ROOT)/src/mms/inc_private" \
+		-I"$(IEC61850ROOT)/src/mms/iso_mms/asn1c" \
+		-I"$(IEC61850ROOT)/src/logging" \
+		-I"$(IEC61850ROOT)/src/vs"
 
-incpath		= $(QTINCPATH)
+incpath		= $(QTINCPATH) $(IEC61850INCPATH)
 cflags		= $(cflags) $(cvars) $(cdebug) $(incpath)
 
 ## create output directory ##
@@ -75,8 +90,8 @@ $(OUTDIR):
 	$(cc) $(cflags) /Fo"$(OUTDIR)\\" /Fp"$(OUTDIR)\\" /Fd"$(OUTDIR)\\" $<
 
 ## uic ##
-$(GUIDIR)\uic_MainFrame.h : $(GUIDIR)\MainFrame.ui
-	$(QTROOT)\bin\uic -o $(GUIDIR)\uic_MainFrame.h $(GUIDIR)\MainFrame.ui
+$(GUIDIR)\uic_centralListWidget.h : $(GUIDIR)\centralListWidget.ui
+	$(QTROOT)\bin\uic -o $(GUIDIR)\uic_centralListWidget.h $(GUIDIR)\centralListWidget.ui
 
 ## moc ##
 $(OUTDIR)\moc_GenConfig.cpp : GenConfig.h
@@ -88,6 +103,9 @@ $(OUTDIR)\moc_MainFrame.cpp : MainFrame.h
 $(OUTDIR)\moc_IedTreeWidget.cpp : IedTreeWidget.h
 	$(QTROOT)\bin\moc $(QTDEFINES) $(incpath) -DWIN32 -o $(OUTDIR)\moc_IedTreeWidget.cpp IedTreeWidget.h
 
+$(OUTDIR)\moc_CentralWidget.cpp : CentralWidget.h
+	$(QTROOT)\bin\moc $(QTDEFINES) $(incpath) -DWIN32 -o $(OUTDIR)\moc_CentralWidget.cpp CentralWidget.h
+
 ## resource ##
 $(OUTDIR)\qrc_GenConfig.cpp : .\GenConfig.qrc
 	$(QTROOT)\bin\rcc -name GenConfig -o $(OUTDIR)\qrc_GenConfig.cpp .\GenConfig.qrc
@@ -96,18 +114,18 @@ $(OUTDIR)\GenConfig.res : .\GenConfig.rc
 	rc.exe -fo $(OUTDIR)\GenConfig.res .\GenConfig.rc
 
 ## link ##
-QTLIBPATH	= /LIBPATH:"$(QTROOT)\lib"
+QTLIBPATH	= /LIBPATH:"$(QTROOT)\lib" /LIBPATH:"$(IEC61850ROOT)\lib"
 !IFDEF	NODEBUG
-QTLIBS	= QtGui.lib QtCore.lib QtMain.lib
+QTLIBS	= QtGui.lib QtCore.lib QtMain.lib iec61850.lib
 !ELSE
-QTLIBS	= QtGuid.lib QtCored.lib QtMaind.lib
+QTLIBS	= QtGuid.lib QtCored.lib QtMaind.lib iec61850d.lib
 !ENDIF
 
 WIN32LIBS	= kernel32.lib user32.lib gdi32.lib ws2_32.lib imm32.lib \
 			  winmm.lib comdlg32.lib shell32.lib advapi32.lib \
 			  winspool.lib shlwapi.lib
 
-LIBS	= $(WIN32LIBS) $(QTLIBS) $(PRILIBS)
+LIBS	= $(WIN32LIBS) $(QTLIBS)
 lflags	= $(lflags) $(QTLIBPATH) $(LIBS) $(libpath) /DEBUG
 
 ## target

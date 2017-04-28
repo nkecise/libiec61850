@@ -26,6 +26,10 @@ class CSCLParser
 		int ParseFile();
 		void GetCfgCtx(std::string& ctx);
 		void GetIEDList(map<string, pugi::xml_node>& M);
+		char *GetSubNetType(
+				const char *iedName, 
+				const char *apName,
+				char *type);
 	private:
 		stack<pugi::xml_node> stkDOI;
 	private:

@@ -977,6 +977,27 @@ void CSCLParser::GetIEDList(map<string, pugi::xml_node>& M)
 	M = mIED;
 }
 
+char *CSCLParser::GetSubNetType(
+		const char *iedName,
+		const char *apName,
+		char *type
+		)
+{
+	char szXPath[256];
+
+	sprintf(szXPath, 
+			"/SCL/Communication/SubNetwork/ConnectedAP"
+			"[@iedName='%s' and @apName='%s']",
+			iedName, apName);
+	pugi::xml_node xnNode = doc.select_single_node(szXPath).node();
+	if(!xnNode)
+		return("-");
+	pugi::xml_node xnSubNet = xnNode.parent();
+	strcpy(type, xnSubNet.attribute("type").value());
+
+	return(type);
+}
+
 CSCLParser::~CSCLParser()
 {
 	mIED.clear();

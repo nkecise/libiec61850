@@ -5,11 +5,15 @@
 #include <QCursor>
 #include "MainFrame.h"
 
+MainWindow *MainWindow::pMainWnd = NULL;
+
 MainWindow::MainWindow()
 {
+	running = false;
+	pMainWnd = this;
 	sclParser = new CSCLParser();
-	msgListWidget = new QListWidget();
-    setCentralWidget(msgListWidget);
+	centralWidget = new CCentralWidget(this);
+    setCentralWidget(centralWidget);
 
     createActions();
     createMenus();
@@ -31,6 +35,15 @@ MainWindow::MainWindow()
 			SIGNAL(customContextMenuRequested(const QPoint &)), 
 			this, SLOT(showPopupMenu(const QPoint &))
 			);
+	connect(this, SIGNAL(stateChange(const QString&)), this,
+			SLOT(stateHasChanged(const QString&)));
+}
+
+void MainWindow::stateHasChanged(const QString& ctx)
+{
+	QString time = QTime::currentTime().toString(Qt::ISODate);
+	QString str = time + " " + ctx;
+	centralWidget->appendStateString(str);
 }
 
 void MainWindow::mouseRightButtonReleased(const QPoint& P)
@@ -69,14 +82,24 @@ void MainWindow::open()
 			it != mIED.end(); it++)
 	{
 		pugi::xml_node xnIED = it->second;
+		QString ctx = QString(xnIED.attribute("name").value())
+					+ "-"
+					+ QString::fromUtf8(xnIED.attribute("desc").value());
 		QTreeWidgetItem *root = new QTreeWidgetItem();
-		root->setText(0, xnIED.attribute("name").value());
+		root->setText(0, ctx);
 		iedTreeWidget->addTopLevelItem(root);
 		for(pugi::xml_node xnAP = xnIED.child("AccessPoint"); xnAP;
 				xnAP = xnAP.next_sibling("AccessPoint"))
 		{
 			QTreeWidgetItem *child = new QTreeWidgetItem();
-			child->setText(0, xnAP.attribute("name").value());
+			ctx = QString(xnAP.attribute("name").value())
+				+ "("
+				+ sclParser->GetSubNetType(
+						xnIED.attribute("name").value(),
+						xnAP.attribute("name").value(),
+						szEchoStr)
+				+ ")";
+			child->setText(0, ctx);
 			root->addChild(child);
 		}
 	}
@@ -84,12 +107,34 @@ void MainWindow::open()
 
 void MainWindow::genCfg()
 {
-	QMessageBox::information(this, NULL, "Generate Configuration");
-}
-
-void MainWindow::simulate()
-{
-	QMessageBox::information(this, NULL, "Simulation");
+	QString apName = currTreeItem->text(0);
+	QString iedName= currTreeItem->parent()->text(0);
+	cfgFileName = 
+		QDir::currentPath() + "/" + iedName + "_" + apName + ".cfg";
+	cfgFileName.replace("/", "\\");
+	//
+	std::string ctx;
+	sclParser->SetAPName(apName.toStdString().c_str());
+	sclParser->SetIEDName(iedName.toStdString().c_str());
+	sclParser->ParseFile();	
+	sclParser->GetCfgCtx(ctx);
+	//
+	QFile file(cfgFileName);
+	if(file.open(QIODevice::ReadWrite | QIODevice::Truncate))
+	{
+		file.write(ctx.c_str(), ctx.size());
+		file.close();
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "Configuration was written to: '%s'",
+				cfgFileName.toStdString().c_str());
+		emit stateChange(QString(szEchoStr));
+	}
+	else
+	{
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "open '%s' failed", cfgFileName.toStdString().c_str());
+		QMessageBox::critical(this, tr("ERROR"), szEchoStr);	
+	}
 }
 
 void MainWindow::save()
@@ -142,8 +187,11 @@ void MainWindow::createActions()
 	genCfgAct = new QAction(tr("Generate Configuration"), this);
 	connect(genCfgAct, SIGNAL(triggered()), this, SLOT(genCfg()));
 
-	simAct = new QAction("Simulate", this);
-	connect(simAct, SIGNAL(triggered()), this, SLOT(simulate()));
+	startSimAct = new QAction("Start Simulation", this);
+	connect(startSimAct, SIGNAL(triggered()), this, SLOT(startSim()));
+
+	stopSimAct = new QAction("Stop Simulation", this);
+	connect(stopSimAct, SIGNAL(triggered()), this, SLOT(stopSim()));
 }
 
 void MainWindow::createMenus()
@@ -202,21 +250,21 @@ void MainWindow::createPopupMenuEx()
 {
 	popMenu = new QMenu(iedTreeWidget);
 	popMenu->addAction(genCfgAct);
-	popMenu->addAction(simAct);
+	popMenu->addAction(startSimAct);
+	popMenu->addAction(stopSimAct);
 }
 
 void MainWindow::showPopupMenu(const QPoint& pos)
 {
-	QTreeWidgetItem *item = (QTreeWidgetItem *)iedTreeWidget->itemAt(pos);
-	if(item == NULL)
+	currTreeItem = (QTreeWidgetItem *)iedTreeWidget->itemAt(pos);
+	if(currTreeItem == NULL)
 		return;
-	QTreeWidgetItem *root = item->parent();
+	QTreeWidgetItem *root = currTreeItem->parent();
 	if(root == NULL)
 		return;
-	//
 	popMenu->clear();
 	popMenu->addAction(genCfgAct);
-	popMenu->addAction(simAct);
+	popMenu->addAction(startSimAct);
 	popMenu->exec(QCursor::pos());
 }
 
