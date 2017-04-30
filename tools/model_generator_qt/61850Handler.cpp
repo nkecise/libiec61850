@@ -44,8 +44,11 @@ void MainWindow::startSim()
 		return;
 	}
 	// terminate old simulation process
-	if(IedServer_isRunning(iedServer))
-		running = false;
+	if(iedServer)
+	{
+		if(IedServer_isRunning(iedServer))
+			running = false;
+	}
 	Thread_sleep(1000);
 	// start new simulation process
 	_beginthreadex(
@@ -105,6 +108,8 @@ void MainWindow::DoSim()
 	IedServer_stop(iedServer);
 	IedServer_destroy(iedServer);
 	IedModel_destroy(model);
+	iedServer = NULL;
+	model = NULL;
 	emit pMainWnd->stateChange(QString("Server is Destroyed"));
 }
 

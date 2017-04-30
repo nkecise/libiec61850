@@ -11,6 +11,8 @@ MainWindow::MainWindow()
 {
 	running = false;
 	pMainWnd = this;
+	iedServer = NULL;
+	model = NULL;
 	sclParser = new CSCLParser();
 	centralWidget = new CCentralWidget(this);
     setCentralWidget(centralWidget);
@@ -86,7 +88,7 @@ void MainWindow::open()
 					+ "-"
 					+ QString::fromUtf8(xnIED.attribute("desc").value());
 		QTreeWidgetItem *root = new QTreeWidgetItem();
-		root->setText(0, ctx);
+		root->setText(0, xnIED.attribute("name").value());
 		iedTreeWidget->addTopLevelItem(root);
 		for(pugi::xml_node xnAP = xnIED.child("AccessPoint"); xnAP;
 				xnAP = xnAP.next_sibling("AccessPoint"))
@@ -99,7 +101,7 @@ void MainWindow::open()
 						xnAP.attribute("name").value(),
 						szEchoStr)
 				+ ")";
-			child->setText(0, ctx);
+			child->setText(0, xnAP.attribute("name").value());
 			root->addChild(child);
 		}
 	}
