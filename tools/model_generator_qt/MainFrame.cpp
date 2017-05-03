@@ -43,8 +43,8 @@ MainWindow::MainWindow()
 
 void MainWindow::stateHasChanged(const QString& ctx)
 {
-	QString time = QTime::currentTime().toString(Qt::ISODate);
-	QString str = time + " " + ctx;
+	QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+	QString str = time + "\t" + ctx;
 	centralWidget->appendStateString(str);
 }
 

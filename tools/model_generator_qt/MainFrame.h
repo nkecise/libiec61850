@@ -57,6 +57,13 @@ private:
 
 public:
 	static MainWindow *pMainWnd;
+	static void SclParserHandler(
+			const char *file,
+			unsigned int line,
+			unsigned int offset,
+			unsigned int err,
+			const char *reason
+			);
 	static void SocketReadHandler(Socket S, uint8_t *buf, int size);
 	static void SocketWriteHandler(Socket S,uint8_t *buf, int size);
 	static void ConfigFileParseHandler(

@@ -41,14 +41,14 @@ class CSCLParser
 		map<string, pugi::xml_node> mDAType;
 		map<string, pugi::xml_node> mEnumType;
 		map<string, map<string, vector<string>>> mSubNet;
-		void ParseIEDSection();
-		void ParseCommunicationSection();
-		void ParseDataTypeTemplates();
+		int ParseIEDSection();
+		int ParseCommunicationSection();
+		int ParseDataTypeTemplates();
 		int ParseIED(const pugi::xml_node& xnIED);
 		int ParseAccessPoint(const pugi::xml_node& xnAP);
 		int ParseLDevice(const pugi::xml_node& xnLDevice);
 		int ParseLN(const pugi::xml_node& xnLN, bool bLN0);
-		void ParseSGCB(const pugi::xml_node& xnSGCB);
+		int ParseSGCB(const pugi::xml_node& xnSGCB);
 		int ParseDO(const pugi::xml_node& xnDOI, bool bSDO);
 		int ParseDA(const pugi::xml_node& xnDO, const char *fc,
 				const char *trgopt);
@@ -71,6 +71,8 @@ class CSCLParser
 	private:
 		char *Convert2MmsString(char *str, int len);
 	private:
+		char szEchoStr[256];
+		int nRetCode;
 		string xpath;
 		string sclName;
 		string apName;

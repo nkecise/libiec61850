@@ -17,4 +17,22 @@
 #include <errno.h>
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+typedef void (*SclParserHandler)(
+	const char *file,
+	unsigned int line,
+	unsigned int offset,
+	unsigned int err,
+	const char *reason
+	);
+extern SclParserHandler pSclParserHandler;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

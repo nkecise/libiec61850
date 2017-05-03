@@ -9,15 +9,25 @@
 Socket_readHandler pSocket_readHandler = MainWindow::SocketReadHandler;
 Socket_writeHandler pSocket_writeHandler;
 ConfigFileParser_parseHandler pConfigFileParser_parseHandler;
+SclParserHandler pSclParserHandler = MainWindow::SclParserHandler;
+
+void MainWindow::SclParserHandler(
+		const char *file, /* file of caller */
+		unsigned int line, /* line of caller */
+		unsigned int offset, /* offset of error occur */
+		unsigned int err, /* error code */
+		const char *reason /* textural description */
+		)
+{
+
+}
 
 void MainWindow::SocketReadHandler(Socket S, uint8_t *buf, int size)
 {
-	OutputDebugString("SocketReadHandler");
 }
 
 void MainWindow::SocketWriteHandler(Socket S, uint8_t *buf, int size)
 {
-	OutputDebugString("SocketWriteHandler");
 }
 
 void MainWindow::ConfigFileParseHandler(
@@ -35,8 +45,8 @@ void MainWindow::startSim()
 {
 	QString apName = currTreeItem->text(0);
 	QString iedName= currTreeItem->parent()->text(0);
-	QString cfgFile = QDir::currentPath() + "/" + iedName + "_" + apName + ".cfg";
-	QFile file(cfgFile);
+	cfgFileName = QDir::currentPath() + "/" + iedName + "_" + apName + ".cfg";
+	QFile file(cfgFileName);
 	if(! file.exists())
 	{
 		QMessageBox::information(this, tr("Information"),

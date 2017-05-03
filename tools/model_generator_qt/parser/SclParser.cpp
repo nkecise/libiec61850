@@ -37,15 +37,26 @@ int CSCLParser::LoadFileUnix()
 	fd = open(sclName.c_str(), O_RDWR);
 	if(fd == -1)
 	{
-		fprintf(stderr, "%s:%d, open '%s', %d\n",
-				__FILE__, __LINE__, sclName.c_str(), errno);
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "open '%s' failed.\n", sclName.c_str());
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
 		return(errno);
 	}
-	if(fstat(fd, &st) == -1)	
+	if(fstat(fd, &st) == -1)
+	{
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "fstat FAILED. ");
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
 		return(errno);
 	xml = (char *)mmap(NULL, st.st_size + 1, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	if(xml == MAP_FAILED)
 	{
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "mmap FAILED.");
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
 		close(fd);
 		return(errno);
 	}
@@ -54,16 +65,18 @@ int CSCLParser::LoadFileUnix()
 	//
 	doc.load_buffer(xml, st.st_size);
 	munmap(xml, st.st_size);
-	ParseDataTypeTemplates();
-	ParseIEDSection();
-	ParseCommunicationSection();
+	if(nRetCode = ParseDataTypeTemplates())
+		return(nRetCode);
+	if(nRetCode = ParseIEDSection())
+		return(nRetCode);
+	if(nRetCode = ParseCommunicationSection())
+		return(nRetCode);
 
-	return(0);
+	return(ERROR_OK);
 }
 #elif _WIN32
 int CSCLParser::LoadFileWind()
 {
-	DWORD nRetCode = 0;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
 	//
 	hFile = CreateFile(
@@ -73,8 +86,11 @@ int CSCLParser::LoadFileWind()
 	if(hFile == INVALID_HANDLE_VALUE)
 	{
 		nRetCode = GetLastError();
-		fprintf(stderr, "CreateFile: %s, %d\n", sclName.c_str(), nRetCode);
-		return(nRetCode);	
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "CreateFile Failed: %s", sclName.c_str());
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
+		return(nRetCode);
 	}
 	//
 	DWORD nFileSizeLow, nFileSizeHigh;
@@ -87,7 +103,10 @@ int CSCLParser::LoadFileWind()
 	if(hFileMap == NULL)
 	{
 		nRetCode = GetLastError();
-		fprintf(stderr, "CreateFileMap: %d\n", nRetCode);
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "CreateFileMapping Failed: %s", sclName.c_str());
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
 		CloseHandle(hFile);
 		return(nRetCode);
 	}
@@ -95,16 +114,22 @@ int CSCLParser::LoadFileWind()
 	if(!pXml)
 	{
 		nRetCode = GetLastError();
-		fprintf(stderr, "MapViewOfFile: %d\n", nRetCode);
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, "MapViewOfFile Failed: %s", sclName.c_str());
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
 		CloseHandle(hFile);
 		CloseHandle(hFileMap);
 		return(nRetCode);
 	}
 	//
 	doc.load_buffer(pXml, nFileSizeLow);
-	ParseDataTypeTemplates();
-	ParseIEDSection();
-	ParseCommunicationSection();
+	if(nRetCode = ParseDataTypeTemplates())
+		return(nRetCode);
+	if(nRetCode = ParseIEDSection())
+		return(nRetCode);
+	if(nRetCode = ParseCommunicationSection())
+		return(nRetCode);
 	//
 	CloseHandle(hFile);
 	CloseHandle(hFileMap);
@@ -129,16 +154,27 @@ int CSCLParser::ParseFile()
 	else
 		xnIED = doc.select_single_node("/SCL/IED").node();
 	if(!xnIED)
-		return(ERROR_MISSING_IED);	
+	{
+		memset(szEchoStr, 0x00, sizeof(szEchoStr));
+		sprintf(szEchoStr, 
+				"The specified IED '%s' is non-exist in the SCL file",
+				iedName.c_str()
+				);
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, ERROR_MISSING_IED, szEchoStr);
+		return(ERROR_MISSING_IED);
+	}
 	iedName = string(xnIED.attribute("name").value());
 	ParseIED(xnIED);
 
 	return(0);
 }
 
-void CSCLParser::ParseDataTypeTemplates()
+int CSCLParser::ParseDataTypeTemplates()
 {
 	pugi::xml_node xnRoot;
+	const char *val = NULL;
+	nRetCode = ERROR_OK;
 
 	mLNType.clear();
 	mDOType.clear();
@@ -146,29 +182,151 @@ void CSCLParser::ParseDataTypeTemplates()
 	mEnumType.clear();
 
 	xnRoot = doc.select_single_node("/SCL/DataTypeTemplates").node();
+	if(!xnRoot)
+	{
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0,
+					ERROR_MISSING_DATA_TYPE_TEMPLATES,
+					err_msg[ERROR_MISSING_DATA_TYPE_TEMPLATES]
+					);
+	}
 	pugi::xml_node xnNode = xnRoot.child("LNodeType");
 	do
 	{
-		mLNType.insert(std::make_pair(xnNode.attribute("id").value(), xnNode));
+		if(xnNode.attribute("id"))
+		{
+			val = xnNode.attribute("id").value();
+			if(mLNType.find(val) != mLNType.end())
+			{
+				if(pSclParserHandler)
+				{
+					memset(szEchoStr, 0x00, sizeof(szEchoStr));
+					sprintf(szEchoStr, 
+							"DataTypeTemplates contains multiple LNodeType: '%s'", val
+							);
+					pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
+							ERROR_TEMPLATE_LNODETYPE_REPEATED,
+							szEchoStr
+							);
+				}
+				nRetCode = ERROR_TEMPLATE_LNODETYPE_REPEATED;
+				goto EXIT;
+			}
+			mLNType.insert(std::make_pair(val, xnNode));
+		}
+		else
+		{
+			if(pSclParserHandler)
+			{
+				memset(szEchoStr, 0x00, sizeof(szEchoStr));
+				sprintf(szEchoStr, "LNodeType '%s' missing required attribute 'id'", val);
+				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
+						ERROR_TEMPLATE_MISSING_ID,
+						szEchoStr
+						);
+				nRetCode = (ERROR_TEMPLATE_MISSING_ID);
+				goto EXIT;
+			}
+		}
 	}while(xnNode = xnNode.next_sibling("LNodeType"));
-
+	//
 	xnNode = xnRoot.child("DOType");
 	do
 	{
-		mDOType.insert(std::make_pair(xnNode.attribute("id").value(), xnNode));
+		if(xnNode.attribute("id"))
+		{
+			val = xnNode.attribute("id").value();
+			if(mDOType.find(val) != mDOType.end())
+			{
+				memset(szEchoStr, 0x00, sizeof(szEchoStr));
+				sprintf(szEchoStr, 
+						"LNodeType contains multiple DO definition: '%s'", val);
+				nRetCode = ERROR_TEMPLATE_DOTYPE_REPEATED;
+				goto EXIT;
+			}
+			mDOType.insert(std::make_pair(val, xnNode));
+		}
+		else
+		{
+			memset(szEchoStr, 0x00, sizeof(szEchoStr));
+			sprintf(szEchoStr, "DOType '%s' missing required attribute: 'id'", val);
+			if(pSclParserHandler)
+			{
+				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(), 0, szEchoStr);
+				nRetCode = ERROR_TEMPLATE_MISSING_ID;
+				goto EXIT;
+			}
+		}
 	}while(xnNode = xnNode.next_sibling("DOType"));
-
+	//
 	xnNode = xnRoot.child("DAType");
 	do
 	{
-		mDAType.insert(std::make_pair(xnNode.attribute("id").value(), xnNode));
+		if(xnNode.attribute("id"))
+		{
+			val = xnNode.attribute("id").value();
+			if(mDAType.find(val) != mDAType.end())
+			{
+				memset(szEchoStr, 0x00, sizeof(szEchoStr));
+				sprintf(szEchoStr, 
+						"DOType '%s' contains multiple DA elements '%s'",
+						xnNode.parent().attribute("name").value(),
+						val
+					   );
+				if(pSclParserHandler)
+				{
+					pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
+							ERROR_TEMPLATE_DATYPE_REPEATED,
+							szEchoStr);
+					nRetCode = ERROR_TEMPLATE_DATYPE_REPEATED;
+					goto EXIT;
+				}
+			}
+			mDAType.insert(std::make_pair(val, xnNode));
+		}
+		else
+		{
+			memset(szEchoStr, 0x00, sizeof(szEchoStr));
+			sprintf(szEchoStr, "DAType '%s' is missing required attribute 'id'", val);
+			if(pSclParserHandler)
+			{
+				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
+						ERROR_TEMPLATE_MISSING_ID,
+						szEchoStr
+						);
+				nRetCode = ERROR_TEMPLATE_MISSING_ID;
+				goto EXIT;
+			}
+		}
 	}while(xnNode = xnNode.next_sibling("DAType"));
-
+	//
 	xnNode = xnRoot.child("EnumType");
 	do
 	{
-		mEnumType.insert(std::make_pair(xnNode.attribute("id").value(), xnNode));
+		if(xnNode.attribute("id"))
+		{
+			val = xnNode.attribute("id").value();
+			if(mEnumType.find(val) != mEnumType.end())
+			{
+				memset(szEchoStr, 0x00, sizeof(szEchoStr));
+				sprintf(szEchoStr, "DataTypeTemplates contains multiple EnumType '%s'", val);
+				nRetCode = ERROR_TEMPLATE_ENUM_TYPE_REPEATED;
+				goto EXIT;
+			}
+			mEnumType.insert(std::make_pair(val, xnNode));
+		}
+		else
+		{
+			memset(szEchoStr, 0x00, sizeof(szEchoStr));
+			sprintf(szEchoStr, "EnumType '%s' is missing required attribute 'id'", val);
+			nRetCode = ERROR_TEMPLATE_MISSING_ID;
+			goto EXIT;
+		}
 	}while(xnNode = xnNode.next_sibling("EnumType"));
+
+EXIT:
+
+	return(nRetCode);
 }
 
 int CSCLParser::ParseIED(const pugi::xml_node& xnIED)
@@ -267,10 +425,6 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 		{
 			stkDOI.push(xnDOI);
 			pushed = true;
-			/*
-			fprintf(stderr, "PUSH: %s\n",
-					xnDOI.attribute("name").value());
-					*/
 		}
 		else
 			pushed = false;
@@ -284,11 +438,6 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 		//
 		if(pushed)
 		{
-			/*
-			pugi::xml_node xnT = stkDOI.top();
-			fprintf(stderr, "POP: %s\n\n",
-					xnT.attribute("name").value());
-					*/
 			stkDOI.pop();
 		}
 	}
@@ -344,10 +493,6 @@ int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
 			{
 				stkDOI.push(xnChild);
 				pushed = true;
-				/*
-				fprintf(stderr, "PUSH: %s\n",
-						xnChild.attribute("name").value());
-						*/
 			}
 			else
 				pushed = false;
@@ -363,11 +508,6 @@ int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
 		//
 		if(pushed)
 		{
-			/*
-			pugi::xml_node xnT = stkDOI.top();
-			fprintf(stderr, "POP: %s\n", 
-					xnT.attribute("name").value());
-					*/
 			stkDOI.pop();
 		}
 	}
@@ -904,13 +1044,15 @@ char *CSCLParser::GetDASAddr(const pugi::xml_node& xnDA, char *val)
 	return(val);
 }
 
-void CSCLParser::ParseSGCB(const pugi::xml_node& xnSGCB)
+int CSCLParser::ParseSGCB(const pugi::xml_node& xnSGCB)
 {
 	ctx += std::string("SG(");
 	ctx += xnSGCB.attribute("ActSG") ? xnSGCB.attribute("ActSG").value() : "1";
 	ctx += " ";
 	ctx += xnSGCB.attribute("numOfSGs") ? xnSGCB.attribute("numOfSGs").value() : "1";
 	ctx += ")\n";	
+
+	return(ERROR_OK);
 }
 
 void CSCLParser::GetCfgCtx(std::string& _ctx_)
@@ -918,24 +1060,24 @@ void CSCLParser::GetCfgCtx(std::string& _ctx_)
 	_ctx_ = ctx;
 }
 
-void CSCLParser::ParseIEDSection()
+int CSCLParser::ParseIEDSection()
 {
 	pugi::xml_node xnRoot = doc.select_single_node("/SCL").node();
 	if(! xnRoot)
-		return;
+		return(ERROR_MISSING_SCL);
 	mIED.clear();
 	for(pugi::xml_node xnIED = xnRoot.child("IED"); xnIED;
 		xnIED = xnIED.next_sibling("IED"))
 	{
 		mIED.insert(make_pair(xnIED.attribute("name").value(), xnIED));
-	}	
+	}
 }
 
-void CSCLParser::ParseCommunicationSection()
+int CSCLParser::ParseCommunicationSection()
 {
 	pugi::xml_node xnRoot = doc.select_single_node("/SCL/Communication").node();
 	if(!xnRoot)
-		return;
+		return(ERROR_MISSING_COMMUNICATION);
 	mSubNet.clear();
 	for(pugi::xml_node xnSubNet = xnRoot.child("SubNetwork"); xnSubNet;
 			xnSubNet = xnSubNet.next_sibling("SubNetwork"))

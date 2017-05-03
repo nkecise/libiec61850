@@ -2,7 +2,7 @@
 # to build the GenConfig utility
 #
 ## common defintions ##
-PROJECT	= GenConfig 
+PROJECT	= IEC61850Server 
 COMNPATH = 
 GUIDIR	= .\UI
 QTROOT	= D:\Qt\4.8.6
@@ -23,7 +23,7 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\moc_MainFrame.obj	\
 		  $(OUTDIR)\qrc_GenConfig.obj	\
 		  $(OUTDIR)\GenConfig.res \
-		  $(OUTDIR)\AttributeType.obj $(OUTDIR)\SclParser.obj \
+		  $(OUTDIR)\AttributeType.obj $(OUTDIR)\SclParser.obj $(OUTDIR)\Error.obj \
 		  $(OUTDIR)\Utils.obj $(OUTDIR)\pugixml.obj \
 		  $(OUTDIR)\IedTreeWidget.obj \
 		  $(OUTDIR)\moc_IedTreeWidget.obj \
