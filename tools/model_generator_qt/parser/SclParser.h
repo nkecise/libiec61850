@@ -32,7 +32,7 @@ class CSCLParser
 				char *type);
 	private:
 		stack<pugi::xml_node> stkDOI;
-	private:
+	private: /* api for parsing */
 		pugi::xml_document doc;
 		pugi::xpath_node_set xnConnectedAP;
 		map<string, pugi::xml_node> mIED;
@@ -68,6 +68,9 @@ class CSCLParser
 		char *GetRptTrgOpt(const pugi::xml_node& xnNode, char *val);
 		char *GetRptOptFld(const pugi::xml_node& xnNode, char *val);
 		char *GetEnumOrd(const pugi::xml_node& xnDA, const pugi::xml_node& xnV);
+	private: /* api for validation */
+		int CheckDocSCL();
+		int CheckRequiredAttrs(const pugi::xml_node xnNode, int type, string& str);
 	private:
 		char *Convert2MmsString(char *str, int len);
 	private:

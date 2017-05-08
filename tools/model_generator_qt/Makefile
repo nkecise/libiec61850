@@ -29,7 +29,8 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\moc_IedTreeWidget.obj \
 		  $(OUTDIR)\61850Handler.obj \
 		  $(OUTDIR)\CentralWidget.obj \
-		  $(OUTDIR)\moc_CentralWidget.obj
+		  $(OUTDIR)\moc_CentralWidget.obj \
+		  $(OUTDIR)\SclValidate.obj
 
 DEPENDS	= $(GUIDIR)\uic_centralListWidget.h
 

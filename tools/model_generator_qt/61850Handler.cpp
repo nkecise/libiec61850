@@ -19,7 +19,12 @@ void MainWindow::SclParserHandler(
 		const char *reason /* textural description */
 		)
 {
-
+	QString str = QString("(")
+				+ QString(file) + "," + QString::number(line)
+				+ QString("), OFFSET:")
+				+ QString::number(offset) + QString(", REASON: ")
+				+ QString(reason);
+	emit pMainWnd->stateChange(str);
 }
 
 void MainWindow::SocketReadHandler(Socket S, uint8_t *buf, int size)

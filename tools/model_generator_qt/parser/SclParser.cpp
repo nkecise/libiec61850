@@ -65,6 +65,31 @@ int CSCLParser::LoadFileUnix()
 	//
 	doc.load_buffer(xml, st.st_size);
 	munmap(xml, st.st_size);
+	//
+	if(nRetCode = CheckDocSCL())
+	{
+		switch(nRetCode)
+		{
+			case ERROR_MISSING_SCL:
+				sprintf(szEchoStr, "Document has no SCL section defined");
+				break;
+			case ERROR_SCL_REPEATED:
+				sprintf(szEchoStr, "Document has more than one SCL section found"); 
+				break;
+			case ERROR_MISSING_TEMPLATE:
+				sprintf(szEchoStr, "Document has no DataTypeTemplates seciton defined");
+				break;
+			case ERROR_MISSING_COMM:
+				sprintf(szEchoStr, "Document has no Communication section defined");
+				break;
+			case ERROR_MISSING_SUBNETWORKS:
+				sprintf(szEchoStr, "No SubNetworks defined under Communication section");
+				break;
+		}
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
+		return(nRetCode);
+	}
 	if(nRetCode = ParseDataTypeTemplates())
 		return(nRetCode);
 	if(nRetCode = ParseIEDSection())
@@ -124,6 +149,30 @@ int CSCLParser::LoadFileWind()
 	}
 	//
 	doc.load_buffer(pXml, nFileSizeLow);
+	if(nRetCode = CheckDocSCL())
+	{
+		switch(nRetCode)
+		{
+			case ERROR_MISSING_SCL:
+				sprintf(szEchoStr, "Document has no SCL section defined");
+				break;
+			case ERROR_SCL_REPEATED:
+				sprintf(szEchoStr, "Document has more than one SCL section found"); 
+				break;
+			case ERROR_MISSING_TEMPLATE:
+				sprintf(szEchoStr, "Document has no DataTypeTemplates seciton defined");
+				break;
+			case ERROR_MISSING_COMMUNICATION:
+				sprintf(szEchoStr, "Document has no Communication section defined");
+				break;
+			case ERROR_MISSING_SUBNETWORKS:
+				sprintf(szEchoStr, "No SubNetworks defined under Communication section");
+				break;
+		}
+		if(pSclParserHandler)
+			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
+		return(nRetCode);
+	}
 	if(nRetCode = ParseDataTypeTemplates())
 		return(nRetCode);
 	if(nRetCode = ParseIEDSection())
@@ -182,51 +231,16 @@ int CSCLParser::ParseDataTypeTemplates()
 	mEnumType.clear();
 
 	xnRoot = doc.select_single_node("/SCL/DataTypeTemplates").node();
-	if(!xnRoot)
-	{
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0,
-					ERROR_MISSING_DATA_TYPE_TEMPLATES,
-					err_msg[ERROR_MISSING_DATA_TYPE_TEMPLATES]
-					);
-	}
 	pugi::xml_node xnNode = xnRoot.child("LNodeType");
 	do
 	{
 		if(xnNode.attribute("id"))
 		{
 			val = xnNode.attribute("id").value();
-			if(mLNType.find(val) != mLNType.end())
-			{
-				if(pSclParserHandler)
-				{
-					memset(szEchoStr, 0x00, sizeof(szEchoStr));
-					sprintf(szEchoStr, 
-							"DataTypeTemplates contains multiple LNodeType: '%s'", val
-							);
-					pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
-							ERROR_TEMPLATE_LNODETYPE_REPEATED,
-							szEchoStr
-							);
-				}
-				nRetCode = ERROR_TEMPLATE_LNODETYPE_REPEATED;
-				goto EXIT;
-			}
 			mLNType.insert(std::make_pair(val, xnNode));
 		}
 		else
 		{
-			if(pSclParserHandler)
-			{
-				memset(szEchoStr, 0x00, sizeof(szEchoStr));
-				sprintf(szEchoStr, "LNodeType '%s' missing required attribute 'id'", val);
-				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
-						ERROR_TEMPLATE_MISSING_ID,
-						szEchoStr
-						);
-				nRetCode = (ERROR_TEMPLATE_MISSING_ID);
-				goto EXIT;
-			}
 		}
 	}while(xnNode = xnNode.next_sibling("LNodeType"));
 	//
@@ -236,26 +250,10 @@ int CSCLParser::ParseDataTypeTemplates()
 		if(xnNode.attribute("id"))
 		{
 			val = xnNode.attribute("id").value();
-			if(mDOType.find(val) != mDOType.end())
-			{
-				memset(szEchoStr, 0x00, sizeof(szEchoStr));
-				sprintf(szEchoStr, 
-						"LNodeType contains multiple DO definition: '%s'", val);
-				nRetCode = ERROR_TEMPLATE_DOTYPE_REPEATED;
-				goto EXIT;
-			}
 			mDOType.insert(std::make_pair(val, xnNode));
 		}
 		else
 		{
-			memset(szEchoStr, 0x00, sizeof(szEchoStr));
-			sprintf(szEchoStr, "DOType '%s' missing required attribute: 'id'", val);
-			if(pSclParserHandler)
-			{
-				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(), 0, szEchoStr);
-				nRetCode = ERROR_TEMPLATE_MISSING_ID;
-				goto EXIT;
-			}
 		}
 	}while(xnNode = xnNode.next_sibling("DOType"));
 	//
@@ -265,38 +263,10 @@ int CSCLParser::ParseDataTypeTemplates()
 		if(xnNode.attribute("id"))
 		{
 			val = xnNode.attribute("id").value();
-			if(mDAType.find(val) != mDAType.end())
-			{
-				memset(szEchoStr, 0x00, sizeof(szEchoStr));
-				sprintf(szEchoStr, 
-						"DOType '%s' contains multiple DA elements '%s'",
-						xnNode.parent().attribute("name").value(),
-						val
-					   );
-				if(pSclParserHandler)
-				{
-					pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
-							ERROR_TEMPLATE_DATYPE_REPEATED,
-							szEchoStr);
-					nRetCode = ERROR_TEMPLATE_DATYPE_REPEATED;
-					goto EXIT;
-				}
-			}
 			mDAType.insert(std::make_pair(val, xnNode));
 		}
 		else
 		{
-			memset(szEchoStr, 0x00, sizeof(szEchoStr));
-			sprintf(szEchoStr, "DAType '%s' is missing required attribute 'id'", val);
-			if(pSclParserHandler)
-			{
-				pSclParserHandler(__FILE__, __LINE__, xnNode.offset_debug(),
-						ERROR_TEMPLATE_MISSING_ID,
-						szEchoStr
-						);
-				nRetCode = ERROR_TEMPLATE_MISSING_ID;
-				goto EXIT;
-			}
 		}
 	}while(xnNode = xnNode.next_sibling("DAType"));
 	//
@@ -306,21 +276,10 @@ int CSCLParser::ParseDataTypeTemplates()
 		if(xnNode.attribute("id"))
 		{
 			val = xnNode.attribute("id").value();
-			if(mEnumType.find(val) != mEnumType.end())
-			{
-				memset(szEchoStr, 0x00, sizeof(szEchoStr));
-				sprintf(szEchoStr, "DataTypeTemplates contains multiple EnumType '%s'", val);
-				nRetCode = ERROR_TEMPLATE_ENUM_TYPE_REPEATED;
-				goto EXIT;
-			}
 			mEnumType.insert(std::make_pair(val, xnNode));
 		}
 		else
 		{
-			memset(szEchoStr, 0x00, sizeof(szEchoStr));
-			sprintf(szEchoStr, "EnumType '%s' is missing required attribute 'id'", val);
-			nRetCode = ERROR_TEMPLATE_MISSING_ID;
-			goto EXIT;
 		}
 	}while(xnNode = xnNode.next_sibling("EnumType"));
 
@@ -670,24 +629,30 @@ char *CSCLParser::GetEnumOrd(
 	const char *v = xnV.text().get();
 	if(!v)
 		return("-1");
+	//
 	pugi::xml_node xnEnumType;
 	if(mEnumType.find(xnDA.attribute("name").value()) != mEnumType.end())
 		xnEnumType = mEnumType.find(xnDA.attribute("name").value())->second;
 	else
 	{
-		fprintf(stderr, "%s,%d: Missing EnumType: %s\n", 
+		sprintf(szEchoStr, "%s,%d: Missing EnumType: %s\n", 
 			__FILE__, __LINE__, xnDA.attribute("name").value());
-		return("0");
+		OutputDebugString(szEchoStr);
+		return("-1");
 	}
 	pugi::xml_node xnEnumVal;
+	bool fnd = false;
 	for(xnEnumVal = xnEnumType.child("EnumVal"); xnEnumVal;
 			xnEnumVal = xnEnumVal.next_sibling("EnumVal"))
 	{
 		if((!strcmp(xnEnumVal.text().get(), v)) 
 				|| !strcmp(v, xnEnumVal.attribute("ord").value()))
+		{
+			fnd = true;
 			break;
+		}
 	}
-	if(xnEnumVal)
+	if(fnd)
 		return((char *)xnEnumVal.attribute("ord").value());
 	else
 		return("-1");
