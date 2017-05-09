@@ -41,7 +41,7 @@ class CSCLParser
 		map<string, pugi::xml_node> mDOType;
 		map<string, pugi::xml_node> mDAType;
 		map<string, pugi::xml_node> mEnumType;
-		map<string, map<string, vector<string>>> mSubNet;
+        map<string, map<string, vector<string> > > mSubNet;
 		int ParseIEDSection();
 		int ParseCommunicationSection();
 		int ParseDataTypeTemplates();

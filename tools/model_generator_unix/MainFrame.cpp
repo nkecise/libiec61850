@@ -65,7 +65,6 @@ void MainWindow::open()
 			);
 	if(curFileName.isEmpty())
 		return;
-	curFileName.replace("/", "\\");
 	//
 	QFile file(curFileName);
 	if(! file.open(QIODevice::ReadOnly))
@@ -113,7 +112,6 @@ void MainWindow::genCfg()
 	QString iedName= currTreeItem->parent()->text(0);
 	cfgFileName = 
 		QDir::tempPath() + "/" + iedName + "_" + apName + ".cfg";
-	cfgFileName.replace("/", "\\");
 	//
 	std::string ctx;
 	sclParser->SetAPName(apName.toStdString().c_str());

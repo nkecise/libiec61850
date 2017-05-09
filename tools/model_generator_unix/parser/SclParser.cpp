@@ -27,167 +27,6 @@ void CSCLParser::SetIEDName(const char *ied)
 	iedName = std::string(ied);
 }
 
-#ifdef __linux__
-int CSCLParser::LoadFileUnix()
-{
-	int fd = 0;
-	char *xml = NULL;
-	struct stat st;
-
-	fd = open(sclName.c_str(), O_RDWR);
-	if(fd == -1)
-	{
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "open '%s' failed.\n", sclName.c_str());
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
-		return(errno);
-	}
-	if(fstat(fd, &st) == -1)
-	{
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "fstat FAILED. ");
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
-		return(errno);
-	xml = (char *)mmap(NULL, st.st_size + 1, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if(xml == MAP_FAILED)
-	{
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "mmap FAILED.");
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, errno, szEchoStr);
-		close(fd);
-		return(errno);
-	}
-	xml[st.st_size] = '\0';
-	close(fd);
-	//
-	doc.load_buffer(xml, st.st_size);
-	munmap(xml, st.st_size);
-	//
-	if(nRetCode = CheckDocSCL())
-	{
-		switch(nRetCode)
-		{
-			case ERROR_MISSING_SCL:
-				sprintf(szEchoStr, "Document has no SCL section defined");
-				break;
-			case ERROR_SCL_REPEATED:
-				sprintf(szEchoStr, "Document has more than one SCL section found"); 
-				break;
-			case ERROR_MISSING_TEMPLATE:
-				sprintf(szEchoStr, "Document has no DataTypeTemplates seciton defined");
-				break;
-			case ERROR_MISSING_COMMUNICATION:
-				sprintf(szEchoStr, "Document has no Communication section defined");
-				break;
-			case ERROR_MISSING_SUBNETWORKS:
-				sprintf(szEchoStr, "No SubNetworks defined under Communication section");
-				break;
-		}
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
-		return(nRetCode);
-	}
-	if(nRetCode = ParseDataTypeTemplates())
-		return(nRetCode);
-	if(nRetCode = ParseIEDSection())
-		return(nRetCode);
-	if(nRetCode = ParseCommunicationSection())
-		return(nRetCode);
-
-	return(ERROR_OK);
-}
-#elif _WIN32
-int CSCLParser::LoadFileWind()
-{
-	HANDLE hFile = INVALID_HANDLE_VALUE;
-	//
-	hFile = CreateFile(
-			sclName.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
-			);
-	if(hFile == INVALID_HANDLE_VALUE)
-	{
-		nRetCode = GetLastError();
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "CreateFile Failed: %s", sclName.c_str());
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
-		return(nRetCode);
-	}
-	//
-	DWORD nFileSizeLow, nFileSizeHigh;
-	HANDLE hFileMap = NULL;
-	LPCSTR pXml = NULL;
-	nFileSizeLow = GetFileSize(hFile, &nFileSizeHigh);
-	hFileMap = CreateFileMapping(
-			hFile, NULL, PAGE_READONLY, 0, nFileSizeLow, NULL
-			);
-	if(hFileMap == NULL)
-	{
-		nRetCode = GetLastError();
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "CreateFileMapping Failed: %s", sclName.c_str());
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
-		CloseHandle(hFile);
-		return(nRetCode);
-	}
-	pXml = (LPSTR)MapViewOfFile(hFileMap, FILE_MAP_READ, 0, 0, nFileSizeLow);
-	if(!pXml)
-	{
-		nRetCode = GetLastError();
-		memset(szEchoStr, 0x00, sizeof(szEchoStr));
-		sprintf(szEchoStr, "MapViewOfFile Failed: %s", sclName.c_str());
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
-		CloseHandle(hFile);
-		CloseHandle(hFileMap);
-		return(nRetCode);
-	}
-	//
-	doc.load_buffer(pXml, nFileSizeLow);
-	if(nRetCode = CheckDocSCL())
-	{
-		switch(nRetCode)
-		{
-			case ERROR_MISSING_SCL:
-				sprintf(szEchoStr, "Document has no SCL section defined");
-				break;
-			case ERROR_SCL_REPEATED:
-				sprintf(szEchoStr, "Document has more than one SCL section found"); 
-				break;
-			case ERROR_MISSING_TEMPLATE:
-				sprintf(szEchoStr, "Document has no DataTypeTemplates seciton defined");
-				break;
-			case ERROR_MISSING_COMMUNICATION:
-				sprintf(szEchoStr, "Document has no Communication section defined");
-				break;
-			case ERROR_MISSING_SUBNETWORKS:
-				sprintf(szEchoStr, "No SubNetworks defined under Communication section");
-				break;
-		}
-		if(pSclParserHandler)
-			pSclParserHandler(__FILE__, __LINE__, 0, nRetCode, szEchoStr);
-		return(nRetCode);
-	}
-	if(nRetCode = ParseDataTypeTemplates())
-		return(nRetCode);
-	if(nRetCode = ParseIEDSection())
-		return(nRetCode);
-	if(nRetCode = ParseCommunicationSection())
-		return(nRetCode);
-	//
-	CloseHandle(hFile);
-	CloseHandle(hFileMap);
-	UnmapViewOfFile(pXml);
-
-	return(0);
-}
-#endif
-
 int CSCLParser::LoadFileEx(const char *ctx, unsigned int cbSize)
 {
 	doc.load_buffer(ctx, cbSize);
@@ -1091,11 +930,11 @@ int CSCLParser::ParseCommunicationSection()
 		{
 			char *iedName = (char *)xnConnAP.attribute("iedName").value();
 			char *apName = (char *)xnConnAP.attribute("apName").value();
-			map<string, map<string, vector<string>>>::iterator it;
+            map<string, map<string, vector<string> > >::iterator it;
 			if(mSubNet.find(iedName) == mSubNet.end())
 			{
 				vector<string> V;
-				map<string, vector<string>> M;
+                map<string, vector<string> > M;
 				V.push_back(apName);
 				M.insert(make_pair(subName, V));
 				mSubNet.insert(make_pair(iedName, M));

@@ -1,9 +1,7 @@
 /*
  * File: 61850Handler.cpp
  */
-#ifdef _WIN32
-#include <process.h>
-#endif
+#include <pthread.h>
 #include <QMessageBox>
 #include <QDir>
 #include "MainFrame.h"
@@ -80,9 +78,10 @@ void MainWindow::startSim()
 		}
 	}
 	// start new simulation process
-	_beginthreadex(
-			NULL, 0, GSimThread, this, 0, NULL
-			);
+    pthread_attr_t attr;
+    pthread_t pthrd;
+    pthread_attr_init(&attr);
+    pthread_create(&pthrd, &attr, &GSimThread, this);
 
 	return;
 }
@@ -161,7 +160,7 @@ void MainWindow::connectionHandler(
 	emit pMainWnd->stateChange(QString(szEchoStr));
 }
 
-unsigned int __stdcall GSimThread(void *args)
+void *GSimThread(void *args)
 {
 	MainWindow *thiz = (MainWindow *)args;
 	thiz->DoSim();
