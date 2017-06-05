@@ -146,64 +146,31 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         indendation = 2;
 
                         if (sscanf((char*) lineBuffer, "LD(%s)", nameString) < 1)
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										""
-										);
                             goto exit_error;
-						}
+
                         terminateString(nameString, ')');
 
                         currentLD = LogicalDevice_create(nameString, model);
                     }
                     else
-					{
-						if(pConfigFileParser_parseHandler)
-							(*pConfigFileParser_parseHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer, 
-									""
-									);
                         goto exit_error;
-					}
                 }
-                else if (indendation == 2) 
-				{
-                    if (StringUtils_startsWith((char*) lineBuffer, "LN")) 
-					{
+                else if (indendation == 2) {
+                    if (StringUtils_startsWith((char*) lineBuffer, "LN")) {
                         indendation = 3;
 
                         if (sscanf((char*) lineBuffer, "LN(%s)", nameString) < 1)
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer, ""
-										);
                             goto exit_error;
-						}
 
                         terminateString(nameString, ')');
 
                         currentLN = LogicalNode_create(nameString, currentLD);
                     }
                     else
-					{
-						if(pConfigFileParser_parseHandler)
-							(*pConfigFileParser_parseHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer, ""
-									);
                         goto exit_error;
-					}
                 }
-                else if (indendation == 3) 
-				{
-                    if (StringUtils_startsWith((char*) lineBuffer, "DO")) 
-					{
+                else if (indendation == 3) {
+                    if (StringUtils_startsWith((char*) lineBuffer, "DO")) {
                         indendation = 4;
 
                         int arrayElements = 0;
@@ -213,8 +180,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         currentModelNode = (ModelNode*)
                                 DataObject_create(nameString, (ModelNode*) currentLN, arrayElements);
                     }
-                    else if (StringUtils_startsWith((char*) lineBuffer, "DS")) 
-					{
+                    else if (StringUtils_startsWith((char*) lineBuffer, "DS")) {
                         indendation = 4;
 
                         sscanf((char*) lineBuffer, "DS(%s)", nameString);
@@ -222,8 +188,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         currentDataSet = DataSet_create(nameString, currentLN);
                     }
-                    else if (StringUtils_startsWith((char*) lineBuffer, "RC")) 
-					{
+                    else if (StringUtils_startsWith((char*) lineBuffer, "RC")) {
                         int isBuffered;
                         uint32_t confRef;
                         int trgOps;
@@ -235,15 +200,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                                 nameString, nameString2, &isBuffered, nameString3, &confRef,
                                 &trgOps, &options, &bufTm, &intgPd);
 
-                        if (matchedItems < 9) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer, "matchedItems<9"
-										);
-							goto exit_error;
-						}
+                        if (matchedItems < 9) goto exit_error;
+
                         char* rptId = NULL;
 
                         if (strcmp(nameString2, "-") != 0)
@@ -257,8 +215,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         ReportControlBlock_create(nameString, currentLN, rptId,
                                 (bool) isBuffered, dataSetName, confRef, trgOps, options, bufTm, intgPd);
                     }
-                    else if (StringUtils_startsWith((char*) lineBuffer, "LC")) 
-					{
+                    else if (StringUtils_startsWith((char*) lineBuffer, "LC")) {
                         uint32_t trgOps;
                         uint32_t intgPd;
                         int logEna;
@@ -267,15 +224,8 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         int matchedItems = sscanf((char*) lineBuffer, "LC(%s %s %s %u %u %i %i)",
                                 nameString, nameString2, nameString3, &trgOps, &intgPd, &logEna, &withReasonCode);
 
-                        if (matchedItems < 7) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer, "matchedItems<7"
-										);
-							goto exit_error;
-						}
+                        if (matchedItems < 7) goto exit_error;
+
                         char* dataSet = NULL;
                         if (strcmp(nameString2, "-") != 0)
                             dataSet = nameString2;
@@ -286,43 +236,26 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         LogControlBlock_create(nameString, currentLN, dataSet, logRef, trgOps, intgPd, logEna, withReasonCode);
                     }
-                    else if (StringUtils_startsWith((char*) lineBuffer, "LOG")) 
-					{
+                    else if (StringUtils_startsWith((char*) lineBuffer, "LOG")) {
                         int matchedItems = sscanf((char*) lineBuffer, "LOG(%s)", nameString);
 
-                        if (matchedItems < 1) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer, "matchedItems<1"
-										);
-							goto exit_error;
-						}
+                        if (matchedItems < 1) goto exit_error;
+
                         /* remove trailing ')' character */
                         strtok(nameString, ")");
 
                         Log_create(nameString, currentLN);
                     }
-                    else if (StringUtils_startsWith((char*) lineBuffer, "GC")) 
-					{
+                    else if (StringUtils_startsWith((char*) lineBuffer, "GC")) {
                         uint32_t confRef;
                         int fixedOffs;
                         int minTime = -1;
                         int maxTime = -1;
 
-                        int matchedItems = sscanf((char*) lineBuffer, "GC(%s %s %s %u %i %i %i )",
+                        int matchedItems = sscanf((char*) lineBuffer, "GC(%s %s %s %u %i %i %i)",
                                 nameString, nameString2, nameString3, &confRef, &fixedOffs, &minTime, &maxTime);
 
-                        if (matchedItems < 5) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer, "matchedItems<5"
-										);
-							goto exit_error;
-						}
+                        if (matchedItems < 5) goto exit_error;
 
                         currentGoCB = GSEControlBlock_create(nameString, currentLN, nameString2,
                                 nameString3, confRef, fixedOffs, minTime, maxTime);
@@ -331,16 +264,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                     }
 #if (CONFIG_IEC61850_SETTING_GROUPS == 1)
-                    else if (StringUtils_startsWith((char*) lineBuffer, "SG")) 
-					{
-                        if (strcmp(currentLN->name, "LLN0") != 0) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										"Setting group control is not defined in LLN0"
-										);
+                    else if (StringUtils_startsWith((char*) lineBuffer, "SG")) {
+
+                        if (strcmp(currentLN->name, "LLN0") != 0) {
+                            if (DEBUG_IED_SERVER)
+                                printf("Setting group control is not defined in LLN0\n");
+
                             goto exit_error;
                         }
 
@@ -350,33 +279,21 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                         int matchedItems = sscanf((char*) lineBuffer, "SG(%i %i)", &actSG, &numOfSGs);
 
                         if (matchedItems < 2)
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										"matchedItems<2"
-										);
                             goto exit_error;
-						}
 
                         SettingGroupControlBlock_create(currentLN, actSG, numOfSGs);
                     }
 #endif /* (CONFIG_IEC61850_SETTING_GROUPS == 1) */
 
                     else {
-						if(pConfigFileParser_parseHandler)
-							(*pConfigFileParser_parseHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									"Unknown identifier"
-									);
+                        if (DEBUG_IED_SERVER)
+                            printf("IED_SERVER: Unknown identifier (%s)\n", lineBuffer);
+
                         goto exit_error;
                     }
 
                 }
-                else if (indendation > 3) 
-				{
+                else if (indendation > 3) {
                     if (StringUtils_startsWith((char*) lineBuffer, "DO")) {
                         indendation++;
 
@@ -384,16 +301,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         int matchedItems = sscanf((char*) lineBuffer, "DO(%s %i)", nameString, &arrayElements);
 
-                        if (matchedItems != 2) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										"matchedItems != 2"
-										);
-							goto exit_error;
-						}
+                        if (matchedItems != 2) goto exit_error;
 
                         currentModelNode = (ModelNode*) DataObject_create(nameString, currentModelNode, arrayElements);
                     }
@@ -428,6 +336,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_VISIBLE_STRING_65:
                             case IEC61850_VISIBLE_STRING_64:
                             case IEC61850_VISIBLE_STRING_32:
+                            case IEC61850_CURRENCY:
                                 {
                                     char* stringStart = valueIndicator + 2;
                                     terminateString(stringStart, '"');
@@ -443,16 +352,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_ENUMERATED:
                                 {
                                     int32_t intValue;
-                                    if (sscanf(valueIndicator + 1, "%i", &intValue) != 1) 
-									{
-										if(pConfigFileParser_parseHandler)
-											(*pConfigFileParser_parseHandler)(
-													__FILE__, __LINE__, 
-													currentLine, indendation, (const char *)lineBuffer,
-													""
-													);
-										goto exit_error;
-									}
+                                    if (sscanf(valueIndicator + 1, "%i", &intValue) != 1) goto exit_error;
                                     dataAttribute->mmsValue = MmsValue_newIntegerFromInt32(intValue);
                                 }
                                 break;
@@ -463,16 +363,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_INT32U:
                                 {
                                     uint32_t uintValue;
-                                    if (sscanf(valueIndicator + 1, "%u", &uintValue) != 1) 
-									{
-										if(pConfigFileParser_parseHandler)
-											(*pConfigFileParser_parseHandler)(
-													__FILE__, __LINE__, 
-													currentLine, indendation, (const char *)lineBuffer,
-													""
-													);
-										goto exit_error;
-									}
+                                    if (sscanf(valueIndicator + 1, "%u", &uintValue) != 1) goto exit_error;
                                     dataAttribute->mmsValue = MmsValue_newUnsignedFromUint32(uintValue);
                                 }
                                 break;
@@ -480,16 +371,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_FLOAT32:
                                 {
                                     float floatValue;
-                                    if (sscanf(valueIndicator + 1, "%f", &floatValue) != 1) 
-									{
-										if(pConfigFileParser_parseHandler)
-											(*pConfigFileParser_parseHandler)(
-													__FILE__, __LINE__, 
-													currentLine, indendation, (const char *)lineBuffer,
-													""
-													);
-										goto exit_error;
-									}
+                                    if (sscanf(valueIndicator + 1, "%f", &floatValue) != 1) goto exit_error;
                                     dataAttribute->mmsValue = MmsValue_newFloat(floatValue);
                                 }
                                 break;
@@ -497,16 +379,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_FLOAT64:
                                 {
                                     double doubleValue;
-                                    if (sscanf(valueIndicator + 1, "%lf", &doubleValue) != 1) 
-									{
-										if(pConfigFileParser_parseHandler)
-											(*pConfigFileParser_parseHandler)(
-													__FILE__, __LINE__, 
-													currentLine, indendation, (const char *)lineBuffer,
-													""
-													);
-										goto exit_error;
-									}
+                                    if (sscanf(valueIndicator + 1, "%lf", &doubleValue) != 1) goto exit_error;
                                     dataAttribute->mmsValue = MmsValue_newDouble(doubleValue);
                                 }
                                 break;
@@ -514,16 +387,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                             case IEC61850_BOOLEAN:
                                 {
                                     int boolean;
-                                    if (sscanf(valueIndicator + 1, "%i", &boolean) != 1) 
-									{
-										if(pConfigFileParser_parseHandler)
-											(*pConfigFileParser_parseHandler)(
-													__FILE__, __LINE__, 
-													currentLine, indendation, (const char *)lineBuffer,
-													""
-													);
-										goto exit_error;
-									}
+                                    if (sscanf(valueIndicator + 1, "%i", &boolean) != 1) goto exit_error;
                                     dataAttribute->mmsValue = MmsValue_newBoolean((bool) boolean);
                                 }
                                 break;
@@ -554,40 +418,14 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                         int matchedItems = sscanf((char*) lineBuffer, "PA(%u %u %u %s)", &vlanPrio, &vlanId, &appId, nameString);
 
-                        if ((matchedItems != 4) || (currentGoCB == NULL)) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										"(matchedItems != 4) || (currentGoCB == NULL)"
-										);
-							goto exit_error;
-						}
+                        if ((matchedItems != 4) || (currentGoCB == NULL)) goto exit_error;
 
                         terminateString(nameString, ')');
 
-                        if (strlen(nameString) != 12) 
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										"strlen(nameString) != 12"
-										);
-							goto exit_error;
-						}
+                        if (strlen(nameString) != 12) goto exit_error;
 
                         if (StringUtils_createBufferFromHexString(nameString, (uint8_t*) nameString2) != 6)
-						{
-							if(pConfigFileParser_parseHandler)
-								(*pConfigFileParser_parseHandler)(
-										__FILE__, __LINE__, 
-										currentLine, indendation, (const char *)lineBuffer,
-										""
-										);
                             goto exit_error;
-						}
 
 
                         PhyComAddress* dstAddress =
@@ -598,19 +436,12 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
 
                     }
                     else
-					{
-						if(pConfigFileParser_parseHandler)
-							(*pConfigFileParser_parseHandler)(
-									__FILE__, __LINE__, 
-									currentLine, indendation, (const char *)lineBuffer,
-									""
-									);
                         goto exit_error;
-					}
                 }
+
+
             }
-            else 
-			{
+            else {
                 if (StringUtils_startsWith((char*) lineBuffer, "MODEL{")) {
 
                     model = IedModel_create("");
@@ -625,15 +456,7 @@ ConfigFileParser_createModelFromConfigFile(FileHandle fileHandle)
                     indendation = 1;
                 }
                 else
-				{
-					if(pConfigFileParser_parseHandler)
-						(*pConfigFileParser_parseHandler)(
-								__FILE__, __LINE__, 
-								currentLine, indendation, (const char *)lineBuffer,
-								""
-								);
                     goto exit_error;
-				}
             }
         }
     }

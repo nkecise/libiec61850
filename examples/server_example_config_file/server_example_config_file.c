@@ -19,8 +19,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <windows.h>
-#include <Shlwapi.h>
 
 #include "hal_filesystem.h"
 #include "iec61850_config_file_parser.h"
@@ -42,11 +40,7 @@ main(int argc, char** argv)
     }
 
     /* open configuration file */
-	CHAR szFileName[MAX_PATH];
-	GetModuleFileName(NULL, szFileName, sizeof(szFileName));
-	PathRemoveFileSpec(szFileName);
-	strcat(szFileName, "\\BYE550M.cfg");
-    FileHandle configFile = FileSystem_openFile(szFileName, false);
+    FileHandle configFile = FileSystem_openFile("model.cfg", false);
 
     if (configFile == NULL) {
         printf("Error opening config file!\n");
@@ -65,6 +59,31 @@ main(int argc, char** argv)
 
 	IedServer iedServer = IedServer_create(model);
 
+	/* Access to data attributes by object reference */
+
+    DataAttribute* anIn1_mag_f = (DataAttribute*)
+            IedModel_getModelNodeByObjectReference(model, "simpleIOGenericIO/GGIO1.AnIn1.mag.f");
+
+    DataAttribute* anIn1_t = (DataAttribute*)
+            IedModel_getModelNodeByObjectReference(model, "simpleIOGenericIO/GGIO1.AnIn1.t");
+
+    if (anIn1_mag_f == NULL)
+        printf("Error getting AnIn1.mag.f data attribute!\n");
+
+    /* Access to data attributes by short address */
+    DataAttribute* anIn2_mag = (DataAttribute*)
+            IedModel_getModelNodeByShortAddress(model, 101);
+
+    DataAttribute* anIn2_t = (DataAttribute*)
+            IedModel_getModelNodeByShortAddress(model, 102);
+
+    DataAttribute* anIn2_mag_f = NULL;
+
+    if (anIn2_mag == NULL)
+        printf("Error getting AnIn2.mag data attribute!\n");
+    else
+        anIn2_mag_f = (DataAttribute*) ModelNode_getChild((ModelNode*) anIn2_mag, "f");
+
 	IedServer_start(iedServer, tcpPort);
 
 	if (!IedServer_isRunning(iedServer)) {
@@ -75,10 +94,42 @@ main(int argc, char** argv)
 
 	running = 1;
 
+	signal(SIGINT, sigint_handler);
+
+	float val = 0.f;
+
+	MmsValue* floatValue = MmsValue_newFloat(val);
+
 	while (running) {
+
+	    if (anIn1_mag_f != NULL) {
+            MmsValue_setFloat(floatValue, val);
+
+            IedServer_lockDataModel(iedServer);
+
+            MmsValue_setUtcTimeMs(anIn1_t->mmsValue, Hal_getTimeInMs());
+            IedServer_updateAttributeValue(iedServer, anIn1_mag_f, floatValue);
+
+            IedServer_unlockDataModel(iedServer);
+	    }
+
+	    if (anIn2_mag_f != NULL) {
+	        MmsValue_setFloat(floatValue, 0.f - val);
+
+	        IedServer_lockDataModel(iedServer);
+
+            MmsValue_setUtcTimeMs(anIn2_t->mmsValue, Hal_getTimeInMs());
+            IedServer_updateAttributeValue(iedServer, anIn2_mag_f, floatValue);
+
+            IedServer_unlockDataModel(iedServer);
+	    }
+
+	    val += 0.1f;
 
 		Thread_sleep(100);
 	}
+
+	MmsValue_delete(floatValue);
 
 	IedServer_stop(iedServer);
 

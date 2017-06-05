@@ -434,17 +434,24 @@ namespace IEC61850
 				}
             }
 
+            private IsoConnectionParameters isoConnectionParameters = null;
+
 			/// <summary>
 			/// Gets the connection parameters
 			/// </summary>
 			/// <returns>The connection parameters</returns>
 			public IsoConnectionParameters GetConnectionParameters ()
 			{
-				IntPtr mmsConnection = IedConnection_getMmsConnection(connection);
+                if (isoConnectionParameters == null)
+                {
+                    IntPtr mmsConnection = IedConnection_getMmsConnection(connection);
 
-				IntPtr parameters = MmsConnection_getIsoConnectionParameters(mmsConnection);
+                    IntPtr parameters = MmsConnection_getIsoConnectionParameters(mmsConnection);
 
-				return new IsoConnectionParameters(parameters);
+                    isoConnectionParameters = new IsoConnectionParameters(parameters);
+                }
+
+                return isoConnectionParameters;
 			}
 
 			private void FreeHGlobaleDeleteFunction (IntPtr pointer)
@@ -980,14 +987,14 @@ namespace IEC61850
 			/// <param name="objectReference">The object reference of a BDA.</param>
 			/// <param name="fc">The functional constraint (FC) of the object</param>
 			/// <exception cref="IedConnectionException">This exception is thrown if there is a connection or service error</exception>
-			public UInt64 ReadTimestampValue (string objectReference, FunctionalConstraint fc)
+			public Timestamp ReadTimestampValue (string objectReference, FunctionalConstraint fc)
 			{
 				var mmsValuePtr = readObjectInternalAndCheckDataAccessError (objectReference, fc);
 
 				var mmsValue = new MmsValue (mmsValuePtr, true);
 
-				if (mmsValue.GetType () == MmsType.MMS_UTC_TIME) 
-					return mmsValue.GetUtcTimeInMs ();
+				if (mmsValue.GetType () == MmsType.MMS_UTC_TIME)
+					return new Timestamp (mmsValue);
 				else
 					throw new IedConnectionException ("Result is not of type timestamp (MMS_UTC_TIME)", 0);
 			}

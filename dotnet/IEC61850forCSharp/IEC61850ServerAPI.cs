@@ -227,7 +227,8 @@ namespace IEC61850
 			GENERIC_BITSTRING = 26,
 			CONSTRUCTED = 27,
 			ENTRY_TIME = 28,
-			PHYCOMADDR = 29
+			PHYCOMADDR = 29,
+			CURRENCY = 30
 		}
 
 		public enum ModeValues
@@ -246,7 +247,12 @@ namespace IEC61850
 			ALARM = 3
 		}
 
-		public class CDC {
+		/// <summary>
+		/// The CDC class contains helper functions to create DataObject instances for the
+		/// most common Common Data Classes.
+		/// </summary>
+		public class CDC 
+		{
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern IntPtr CDC_SPS_create(string name, IntPtr parent, uint options);
 
@@ -555,6 +561,9 @@ namespace IEC61850
 			[DllImport ("iec61850", CallingConvention=CallingConvention.Cdecl)]
 			static extern IntPtr IedServer_create(IntPtr modelRef);
 
+			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+			static extern void IedServer_setLocalIpAddress(IntPtr self, string localIpAddress);
+
 			[DllImport ("iec61850", CallingConvention=CallingConvention.Cdecl)]
 			static extern void IedServer_start(IntPtr self, int tcpPort);
 
@@ -574,10 +583,16 @@ namespace IEC61850
 			static extern void IedServer_unlockDataModel(IntPtr self);
 
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+			static extern void IedServer_updateAttributeValue(IntPtr self, IntPtr DataAttribute, IntPtr MmsValue);
+
+			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern void IedServer_updateBooleanAttributeValue(IntPtr self, IntPtr dataAttribute, bool value);
 
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern void IedServer_updateInt32AttributeValue(IntPtr self, IntPtr dataAttribute, int value);
+
+			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+			static extern void IedServer_updateInt64AttributeValue(IntPtr self, IntPtr dataAttribute, Int64 value);
 
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern void IedServer_updateFloatAttributeValue(IntPtr self, IntPtr dataAttribute, float value);
@@ -587,6 +602,9 @@ namespace IEC61850
 
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern void IedServer_updateUTCTimeAttributeValue(IntPtr self, IntPtr dataAttribute, ulong value);
+
+			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
+			static extern void IedServer_updateTimestampAttributeValue(IntPtr self, IntPtr dataAttribute, IntPtr timestamp);
 
 			[DllImport("iec61850", CallingConvention = CallingConvention.Cdecl)]
 			static extern void IedServer_updateQuality(IntPtr self, IntPtr dataAttribute, ushort value);
@@ -781,7 +799,28 @@ namespace IEC61850
 
 			private InternalConnectionHandler internalConnectionHandler = null;
 
+			/// <summary>
+			/// Sets the local ip address for listening
+			/// </summary>
+			/// <param name="localIpAddress">Local IP address.</param>
+			public void SetLocalIpAddress(string localIpAddress)
+			{
+				IedServer_setLocalIpAddress (self, localIpAddress);
+			}
+
+			/// <summary>
+			/// Start MMS server
+			/// </summary>
+			/// <param name="localIpAddress">Local IP address.</param>
+			/// <param name="tcpPort">TCP port to use</param>
+			public void Start(string localIpAddress, int tcpPort)
+			{
+				SetLocalIpAddress (localIpAddress);
+				Start (tcpPort);
+			}
+
 			/// <summary>Start MMS server</summary>
+			/// <param name="tcpPort">TCP port to use</param>
 			public void Start(int tcpPort)
 			{
 				if (internalConnectionHandler == null)
@@ -892,24 +931,34 @@ namespace IEC61850
 				IedServer_unlockDataModel(self);
 			}
 
-			public void UpdateBooleanAttributeValue(DataAttribute dataAttr, bool val)
+			public void UpdateAttributeValue(DataAttribute dataAttr, MmsValue value)
 			{
-				IedServer_updateBooleanAttributeValue(self, dataAttr.self, val);
+				IedServer_updateAttributeValue (self, dataAttr.self, value.valueReference);
 			}
 
-			public void UpdateFloatAttributeValue(DataAttribute dataAttr, float val)
+			public void UpdateBooleanAttributeValue(DataAttribute dataAttr, bool value)
 			{
-				IedServer_updateFloatAttributeValue(self, dataAttr.self, val);
+				IedServer_updateBooleanAttributeValue(self, dataAttr.self, value);
 			}
 
-			public void UpdateInt32AttributeValue(DataAttribute dataAttr, int val)
+			public void UpdateFloatAttributeValue(DataAttribute dataAttr, float value)
 			{
-				IedServer_updateInt32AttributeValue(self, dataAttr.self, val);
+				IedServer_updateFloatAttributeValue(self, dataAttr.self, value);
 			}
 
-			public void UpdateVisibleStringAttributeValue(DataAttribute dataAttr, string val)
+			public void UpdateInt32AttributeValue(DataAttribute dataAttr, int value)
 			{
-				IedServer_updateVisibleStringAttributeValue(self, dataAttr.self, val);
+				IedServer_updateInt32AttributeValue(self, dataAttr.self, value);
+			}
+
+			public void UpdateInt64AttributeValue(DataAttribute dataAttr, Int64 value)
+			{
+				IedServer_updateInt64AttributeValue (self, dataAttr.self, value);
+			}
+
+			public void UpdateVisibleStringAttributeValue(DataAttribute dataAttr, string value)
+			{
+				IedServer_updateVisibleStringAttributeValue(self, dataAttr.self, value);
 			}
 
 			public void UpdateUTCTimeAttributeValue(DataAttribute dataAttr, DateTime timestamp)
@@ -921,6 +970,11 @@ namespace IEC61850
 				ulong timeVal = Convert.ToUInt64(timeDiff.TotalMilliseconds);
 
 				IedServer_updateUTCTimeAttributeValue(self, dataAttr.self, timeVal);
+			}
+
+			public void UpdateTimestampAttributeValue(DataAttribute dataAttr, Timestamp timestamp)
+			{
+				IedServer_updateTimestampAttributeValue (self, dataAttr.self, timestamp.timestampRef);
 			}
 
 			public void UpdateQuality(DataAttribute dataAttr, ushort value)

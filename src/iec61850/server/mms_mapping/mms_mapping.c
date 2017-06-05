@@ -229,6 +229,10 @@ createNamedVariableFromDataAttribute(DataAttribute* attribute)
             namedVariable->typeSpec.octetString = -64;
             namedVariable->type = MMS_OCTET_STRING;
             break;
+        case IEC61850_CURRENCY:  /* mapping of Currency BasicType (see tissue 1047) */
+            namedVariable->typeSpec.visibleString = -3;
+            namedVariable->type = MMS_VISIBLE_STRING;
+            break;
         case IEC61850_VISIBLE_STRING_32:
             namedVariable->typeSpec.visibleString = -32;
             namedVariable->type = MMS_VISIBLE_STRING;
@@ -1407,14 +1411,6 @@ isFunctionalConstraintSE(char* separator)
         return false;
 }
 
-static bool
-isFunctionalConstraintST(char* separator)
-{
-    if (strncmp(separator + 1, "ST", 2) == 0)
-        return true;
-    else
-        return false;
-}
 
 #if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 static bool
@@ -1718,9 +1714,6 @@ getFunctionalConstraintForWritableNode(MmsMapping* self, char* separator)
         return IEC61850_FC_SV;
     if (isFunctionalConstraintSE(separator))
         return IEC61850_FC_SE;
-	/* kuixiaon added on May 23, 2017 */
-    if (isFunctionalConstraintST(separator))
-        return IEC61850_FC_ST;
 
     return IEC61850_FC_NONE;
 }
@@ -1884,12 +1877,10 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
                 if (sg != NULL) {
                     uint32_t val = MmsValue_toUint32(value);
 
-                    if ((val > 0) && (val <= sg->sgcb->numOfSGs)) 
-					{
-                        if (val != sg->sgcb->actSG) 
-						{
-                            if (sg->actSgChangedHandler != NULL) 
-							{
+                    if ((val > 0) && (val <= sg->sgcb->numOfSGs)) {
+                        if (val != sg->sgcb->actSG) {
+
+                            if (sg->actSgChangedHandler != NULL) {
                                 if (sg->actSgChangedHandler(sg->actSgChangedHandlerParameter, sg->sgcb,
                                         (uint8_t) val, (ClientConnection) connection))
                                 {
@@ -1901,6 +1892,7 @@ mmsWriteHandler(void* parameter, MmsDomain* domain,
                                     MmsValue_setUint8(actSg, sg->sgcb->actSG);
                                     MmsValue_setUtcTimeMs(lActTm, Hal_getTimeInMs());
                                 }
+
                                 else
                                     return DATA_ACCESS_ERROR_OBJECT_ACCESS_DENIED;
                             }

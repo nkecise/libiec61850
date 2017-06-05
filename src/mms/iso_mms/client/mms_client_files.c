@@ -80,57 +80,6 @@ getNextFrsmId(MmsConnection connection)
     return nextFrsmId;
 }
 
-//TODO remove redundancy (with server implementation)
-static void
-createExtendedFilename(char* extendedFileName, char* fileName)
-{
-    strcpy(extendedFileName, CONFIG_VIRTUAL_FILESTORE_BASEPATH);
-    strncat(extendedFileName, fileName, sizeof(CONFIG_VIRTUAL_FILESTORE_BASEPATH) + 256);
-}
-
-//TODO remove redundancy (with server implementation)
-static FileHandle
-openFile(char* fileName, bool readWrite)
-{
-    char extendedFileName[sizeof(CONFIG_VIRTUAL_FILESTORE_BASEPATH) + 256];
-
-    createExtendedFilename(extendedFileName, fileName);
-
-    return FileSystem_openFile(extendedFileName, readWrite);
-}
-
-//TODO remove redundancy (with server implementation)
-static bool
-parseFileName(char* filename, uint8_t* buffer, int* bufPos, int maxBufPos , uint32_t invokeId, ByteBuffer* response)
-{
-    uint8_t tag = buffer[(*bufPos)++];
-    int length;
-
-    if (tag != 0x19) {
-      mmsMsg_createMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_INVALID_PDU, response);
-      return false;
-    }
-
-    *bufPos = BerDecoder_decodeLength(buffer, &length, *bufPos, maxBufPos);
-
-    if (*bufPos < 0)  {
-      mmsMsg_createMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_INVALID_PDU, response);
-      return false;
-    }
-
-    if (length > 255) {
-      mmsMsg_createMmsRejectPdu(&invokeId, MMS_ERROR_REJECT_REQUEST_INVALID_ARGUMENT, response);
-      return false;
-    }
-
-    memcpy(filename, buffer + *bufPos, length);
-    filename[length] = 0;
-    *bufPos += length;
-
-    return true;
-}
-
-
 void
 mmsClient_handleFileOpenRequest(
     MmsConnection connection,
@@ -152,7 +101,7 @@ mmsClient_handleFileOpenRequest(
         switch(tag) {
         case 0xa0: /* filename */
 
-            if (!parseFileName(filename, buffer, &bufPos, bufPos + length, invokeId, response))
+            if (!mmsMsg_parseFileName(filename, buffer, &bufPos, bufPos + length, invokeId, response))
                 return;
 
             hasFileName = true;
@@ -175,14 +124,15 @@ mmsClient_handleFileOpenRequest(
         MmsFileReadStateMachine* frsm = getFreeFrsm(connection);
 
         if (frsm != NULL) {
-            FileHandle fileHandle = openFile(filename, false);
+            FileHandle fileHandle = mmsMsg_openFile(MmsConnection_getFilestoreBasepath(connection), filename, false);
 
             if (fileHandle != NULL) {
                 frsm->fileHandle = fileHandle;
                 frsm->readPosition = filePosition;
                 frsm->frsmId = getNextFrsmId(connection);
 
-                mmsMsg_createFileOpenResponse(invokeId, response, filename, frsm);
+                mmsMsg_createFileOpenResponse(MmsConnection_getFilestoreBasepath(connection),
+                        invokeId, response, filename, frsm);
             }
             else
                 mmsMsg_createServiceErrorPdu(invokeId, response, MMS_ERROR_FILE_FILE_NON_EXISTENT);
@@ -212,7 +162,7 @@ mmsClient_handleFileReadRequest(
     uint32_t invokeId,
     ByteBuffer* response)
 {
-    int32_t frsmId = (int32_t) BerDecoder_decodeUint32(buffer, maxBufPos - bufPos, bufPos);
+    int32_t frsmId = BerDecoder_decodeInt32(buffer, maxBufPos - bufPos, bufPos);
 
     if (DEBUG_MMS_CLIENT)
         printf("MMS_CLIENT: mmsClient_handleFileReadRequest read request for frsmId: %i\n", frsmId);
@@ -232,7 +182,7 @@ mmsClient_handleFileCloseRequest(
     uint32_t invokeId,
     ByteBuffer* response)
 {
-    int32_t frsmId = (int32_t) BerDecoder_decodeUint32(buffer, maxBufPos - bufPos, bufPos);
+    int32_t frsmId = BerDecoder_decodeInt32(buffer, maxBufPos - bufPos, bufPos);
 
     MmsFileReadStateMachine* frsm = getFrsm(connection, frsmId);
 
@@ -698,7 +648,7 @@ mmsMsg_parseFileOpenResponse(uint8_t* buffer, int bufPos, int maxBufPos, int32_t
 
         switch (tag) {
         case 0x80: /* frsmId */
-            *frsmId = (int32_t) BerDecoder_decodeUint32(buffer, length, bufPos);
+            *frsmId = BerDecoder_decodeInt32(buffer, length, bufPos);
 
             bufPos += length;
             break;
