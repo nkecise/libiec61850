@@ -127,11 +127,13 @@ void MainWindow::DoSim()
 		emit pMainWnd->stateChange(QString(szEchoStr));
 		return;
 	}
+	int i = 1;
 	running = true;
 	emit pMainWnd->stateChange(QString("Server is RUNNING"));
 	while(running)
 	{
-		Thread_sleep(500);
+        Thread_sleep(10000);
+        writeRequest(i++);
 	}
 	IedServer_stop(iedServer);
 	IedServer_destroy(iedServer);
@@ -139,6 +141,22 @@ void MainWindow::DoSim()
 	iedServer = NULL;
 	model = NULL;
 	emit pMainWnd->stateChange(QString("Server is Destroyed"));
+}
+
+void MainWindow::writeRequest(int i)
+{
+	char szObjRef[256];
+
+	strcpy(szObjRef, "PRS702PROT/CarDisPDIS1.Op.general");
+	DataAttribute *datAttr = (DataAttribute *)
+		IedModel_getModelNodeByObjectReference(model, szObjRef);
+	if(datAttr == NULL)
+		return;
+	MmsValue *val = MmsValue_newBoolean(i%2);
+	IedServer_lockDataModel(iedServer);
+	IedServer_updateAttributeValue(iedServer, datAttr, val);
+	IedServer_unlockDataModel(iedServer);
+	MmsValue_delete(val);
 }
 
 void MainWindow::connectionHandler(

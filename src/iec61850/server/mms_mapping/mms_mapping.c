@@ -1407,6 +1407,14 @@ isFunctionalConstraintSE(char* separator)
         return false;
 }
 
+static bool
+isFunctionalConstraintST(char* separator)
+{
+    if (strncmp(separator + 1, "ST", 2) == 0)
+        return true;
+    else
+        return false;
+}
 
 #if (CONFIG_IEC61850_CONTROL_SERVICE == 1)
 static bool
@@ -1710,6 +1718,9 @@ getFunctionalConstraintForWritableNode(MmsMapping* self, char* separator)
         return IEC61850_FC_SV;
     if (isFunctionalConstraintSE(separator))
         return IEC61850_FC_SE;
+	/* kuixiaon added on May 23, 2017 */
+    if (isFunctionalConstraintST(separator))
+        return IEC61850_FC_ST;
 
     return IEC61850_FC_NONE;
 }

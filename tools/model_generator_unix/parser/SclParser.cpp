@@ -794,8 +794,10 @@ char *CSCLParser::GetRptOptFld(const pugi::xml_node& xnRpt, char *val)
 		if(!strcmp(xnRpt.attribute("bufOvfl").value(), "true"))
 			value += 32;
 	}
+    /*
 	else
 		value += 32;
+        */
 	if(xnRpt.attribute("entryID"))
 		if(!strcmp(xnRpt.attribute("entryID").value(), "true"))
 			value += 64;

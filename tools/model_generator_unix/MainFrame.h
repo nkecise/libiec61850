@@ -86,6 +86,7 @@ private:
     void createDockWindows();
 	void clearIedTreeWidget();
 	void createPopupMenuEx();
+    void writeRequest(int i);
 
 	QMenu *popMenu;
 	QAction *genCfgAct;

@@ -731,7 +731,7 @@ int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
 	//
 	pugi::xml_node xnAddress = xnConnedAP.child("Address");
 	if(! xnAddress)
-		ctx += "){\n}\n";	
+		ctx += "){\n}\n";
 	else
 	{
 		ctx += "){\n";
