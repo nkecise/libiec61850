@@ -213,6 +213,9 @@ Socket_connect(Socket self, const char* address, int port);
 int
 Socket_read(Socket self, uint8_t* buf, int size);
 
+typedef void 
+(*Socket_readHandler)(Socket self, uint8_t *buf, int size);
+extern Socket_readHandler pSocket_readHandler;
 /**
  * \brief send a message through the socket
  *
@@ -225,6 +228,9 @@ Socket_read(Socket self, uint8_t* buf, int size);
 int
 Socket_write(Socket self, uint8_t* buf, int size);
 
+typedef void
+(*Socket_writeHandler)(Socket self, uint8_t *buf, int size);
+extern Socket_writeHandler pSocket_writeHandler;
 /**
  * \brief Get the address of the peer application (IP address and port number)
  *

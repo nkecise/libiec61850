@@ -24,6 +24,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
+#include <time.h>
 
 #pragma comment (lib, "Ws2_32.lib")
 
@@ -363,7 +364,7 @@ int
 Socket_read(Socket self, uint8_t* buf, int size)
 {
     int bytes_read = recv(self->fd, (char*) buf, size, 0);
-
+	
     if (bytes_read == 0) // peer has closed socket
         return -1;
 
@@ -373,6 +374,9 @@ Socket_read(Socket self, uint8_t* buf, int size)
         else
             return -1;
     }
+
+	if(pSocket_readHandler)
+		(*pSocket_readHandler)(self, buf, size);
 
 	return bytes_read;
 }
@@ -390,6 +394,9 @@ Socket_write(Socket self, uint8_t* buf, int size)
         else
             bytes_sent = -1;
     }
+
+	if(pSocket_writeHandler)
+		(*pSocket_writeHandler)(self, buf, size);
 
 	return bytes_sent;
 }

@@ -413,6 +413,9 @@ Socket_read(Socket self, uint8_t* buf, int size)
         }
     }
 
+	if(pSocket_readHandler)
+		(*pSocket_readHandler)(self, buf, size);
+
     return read_bytes;
 }
 
@@ -421,6 +424,9 @@ Socket_write(Socket self, uint8_t* buf, int size)
 {
     if (self->fd == -1)
         return -1;
+
+	if(pSocket_writeHandler)
+		(*pSocket_writeHandler)(self, buf, size);
 
     // MSG_NOSIGNAL - prevent send to signal SIGPIPE when peer unexpectedly closed the socket
     return send(self->fd, buf, size, MSG_NOSIGNAL);
