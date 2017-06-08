@@ -13,6 +13,7 @@ MainWindow::MainWindow()
 	pMainWnd = this;
 	iedServer = NULL;
 	model = NULL;
+	pConfigFileParser_parseHandler = MainWindow::ConfigFileParseHandler;
 	sclParser = new CSCLParser();
 	centralWidget = new CCentralWidget(this);
     setCentralWidget(centralWidget);
