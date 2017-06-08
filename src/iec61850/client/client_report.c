@@ -31,7 +31,10 @@
 
 #include "libiec61850_platform_includes.h"
 
-#include <inttypes.h>
+//#include <inttypes.h>
+#ifndef PRIu64 
+#define PRIu64 "I64u"
+#endif
 
 struct sClientReport
 {

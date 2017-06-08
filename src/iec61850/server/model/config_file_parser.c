@@ -32,6 +32,7 @@
 
 static uint8_t lineBuffer[READ_BUFFER_MAX_SIZE];
 
+ConfigFileParser_parseHandler pConfigFileParser_parseHandler;
 
 static int
 readLine(FileHandle fileHandle, uint8_t* buffer, int maxSize)

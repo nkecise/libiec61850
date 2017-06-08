@@ -32,6 +32,8 @@
 #include "hal_socket.h"
 #include "stack_config.h"
 
+Socket_readHandler pSocket_readHandler;
+Socket_writeHandler pSocket_writeHandler;
 
 #ifndef __MINGW64_VERSION_MAJOR
 struct tcp_keepalive {
