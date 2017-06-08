@@ -116,6 +116,8 @@ void MainWindow::DoSim()
 			iedServer, 
 			(IedConnectionIndicationHandler)connectionHandler,
 			NULL);
+	installSgcbHandler();
+	installFileServiceHandler();
 	IedServer_start(iedServer, 102);
 	if(! IedServer_isRunning(iedServer))
 	{

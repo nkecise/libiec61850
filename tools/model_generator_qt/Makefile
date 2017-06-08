@@ -30,7 +30,9 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\61850Handler.obj \
 		  $(OUTDIR)\CentralWidget.obj \
 		  $(OUTDIR)\moc_CentralWidget.obj \
-		  $(OUTDIR)\SclValidate.obj
+		  $(OUTDIR)\SclValidate.obj \
+		  $(OUTDIR)\SGCBHandler.obj \
+		  $(OUTDIR)\FileSvcHandler.obj
 
 DEPENDS	= $(GUIDIR)\uic_centralListWidget.h
 

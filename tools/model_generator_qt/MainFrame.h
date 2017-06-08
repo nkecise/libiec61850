@@ -93,7 +93,15 @@ public:
 			SettingGroupControlBlock *sgcb,
 			uint8_t editSg
 			);
+	static MmsError myMmsFileAccessHandler(
+			void *parameter,
+			MmsServerConnection connection,
+			MmsFileServiceType type,
+			const char *localFileName,
+			const char *otherFileName
+			);
 	void installSgcbHandler();
+	void installFileServiceHandler();
 	void DoSim();
 
 private:

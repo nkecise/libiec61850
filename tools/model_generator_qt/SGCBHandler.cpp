@@ -3,7 +3,7 @@
  */
 #include "MainFrame.h"
 
-bool MainWindow::myActiveSettingGroupChangedHander(
+bool MainWindow::myActiveSettingGroupChangedHandler(
 		void *paras, SettingGroupControlBlock *sgcb, uint8_t newActSG, ClientConnection conn
 		)
 {
@@ -21,7 +21,6 @@ void MainWindow::myEditSettingGroupConfirmationHandler(
 		void *paras, SettingGroupControlBlock *sgcb, uint8_t editSG
 		)
 {
-	return(true);
 }
 
 void MainWindow::installSgcbHandler()
