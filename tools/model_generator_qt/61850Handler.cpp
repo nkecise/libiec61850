@@ -8,9 +8,6 @@
 #include <QDir>
 #include "MainFrame.h"
 
-//pSocket_readHandler = MainWindow::SocketReadHandler;
-//Socket_writeHandler pSocket_writeHandler;
-//pConfigFileParser_parseHandler = MainWindow::ConfigFileParseHandler;
 SclParserHandler pSclParserHandler = MainWindow::SclParserHandler;
 
 void MainWindow::SclParserHandler(
