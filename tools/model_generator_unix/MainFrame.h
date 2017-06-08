@@ -76,6 +76,32 @@ public:
 			bool connected,
 			void *paras
 			);
+	static bool myActiveSettingGroupChangedHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t newActSg,
+			ClientConnection connection
+			);
+	static bool myEditSettingGroupChangedHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t newEditSG,
+			ClientConnection connection
+			);
+	static void myEditSettingGroupConfirmationHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t editSg
+			);
+	static MmsError myMmsFileAccessHandler(
+			void *parameter,
+			MmsServerConnection connection,
+			MmsFileServiceType type,
+			const char *localFileName,
+			const char *otherFileName
+			);
+	void installSgcbHandler();
+	void installFileServiceHandler();
 	void DoSim();
 
 private:

@@ -6,9 +6,6 @@
 #include <QDir>
 #include "MainFrame.h"
 
-Socket_readHandler pSocket_readHandler = MainWindow::SocketReadHandler;
-Socket_writeHandler pSocket_writeHandler;
-ConfigFileParser_parseHandler pConfigFileParser_parseHandler = MainWindow::ConfigFileParseHandler;
 SclParserHandler pSclParserHandler = MainWindow::SclParserHandler;
 
 void MainWindow::SclParserHandler(
@@ -132,7 +129,7 @@ void MainWindow::DoSim()
 	emit pMainWnd->stateChange(QString("Server is RUNNING"));
 	while(running)
 	{
-        Thread_sleep(10000);
+        Thread_sleep(15000);
         writeRequest(i++);
 	}
 	IedServer_stop(iedServer);
@@ -147,16 +144,27 @@ void MainWindow::writeRequest(int i)
 {
 	char szObjRef[256];
 
-	strcpy(szObjRef, "PRS702PROT/CarDisPDIS1.Op.general");
-	DataAttribute *datAttr = (DataAttribute *)
+    strcpy(szObjRef, "PRS702LD0/STMP1.TmpSv01.mag.f");
+    DataAttribute *datAttr1 = (DataAttribute *)
 		IedModel_getModelNodeByObjectReference(model, szObjRef);
-	if(datAttr == NULL)
-		return;
-	MmsValue *val = MmsValue_newBoolean(i%2);
+    DataAttribute *datAttr2 = (DataAttribute *)
+            IedModel_getModelNodeByObjectReference(model, "PRS702LD0/STMP4.TmpSv10.mag.f");
+    DataAttribute *datAttr3 = (DataAttribute *)
+            IedModel_getModelNodeByObjectReference(model, "PRS702LD0/SCLI2.RPowerSv06.mag.f");
+    if(!datAttr1 || !datAttr2 || !datAttr3)
+        return;
+    MmsValue *val1 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
+    MmsValue *val2 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
+    MmsValue *val3 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
+
 	IedServer_lockDataModel(iedServer);
-	IedServer_updateAttributeValue(iedServer, datAttr, val);
+    IedServer_updateAttributeValue(iedServer, datAttr1, val1);
+    IedServer_updateAttributeValue(iedServer, datAttr2, val2);
+    IedServer_updateAttributeValue(iedServer, datAttr3, val3);
 	IedServer_unlockDataModel(iedServer);
-	MmsValue_delete(val);
+    MmsValue_delete(val1);
+    MmsValue_delete(val2);
+    MmsValue_delete(val3);
 }
 
 void MainWindow::connectionHandler(
