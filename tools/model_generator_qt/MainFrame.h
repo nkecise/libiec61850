@@ -76,6 +76,24 @@ public:
 			bool connected,
 			void *paras
 			);
+	static bool myActiveSettingGroupChangedHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t newActSg,
+			ClientConnection connection
+			);
+	static bool myEditSettingGroupChangedHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t newEditSG,
+			ClientConnection connection
+			);
+	static void myEditSettingGroupConfirmationHandler(
+			void *parameter,
+			SettingGroupControlBlock *sgcb,
+			uint8_t editSg
+			);
+	void installSgcbHandler();
 	void DoSim();
 
 private:
