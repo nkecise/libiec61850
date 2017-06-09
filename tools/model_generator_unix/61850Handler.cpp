@@ -6,6 +6,9 @@
 #include <QDir>
 #include "MainFrame.h"
 
+Socket_readHandler pSocket_readHandler = MainWindow::SocketReadHandler;
+Socket_writeHandler pSocket_writeHandler;
+ConfigFileParser_parseHandler pConfigFileParser_parseHandler = MainWindow::ConfigFileParseHandler;
 SclParserHandler pSclParserHandler = MainWindow::SclParserHandler;
 
 void MainWindow::SclParserHandler(
@@ -115,6 +118,8 @@ void MainWindow::DoSim()
 			iedServer, 
 			(IedConnectionIndicationHandler)connectionHandler,
 			NULL);
+    installSgcbHandler();
+    installFileServiceHandler();
 	IedServer_start(iedServer, 102);
 	if(! IedServer_isRunning(iedServer))
 	{
@@ -130,7 +135,7 @@ void MainWindow::DoSim()
 	while(running)
 	{
         Thread_sleep(15000);
-        writeRequest(i++);
+        //writeRequest(i++);
 	}
 	IedServer_stop(iedServer);
 	IedServer_destroy(iedServer);

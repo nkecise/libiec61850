@@ -18,6 +18,6 @@ void MainWindow::installFileServiceHandler()
 {
 	MmsServer mmsServer = IedServer_getMmsServer(iedServer);
 
-	MmsServer_setFilestoreBasepath(mmsServer, ".");
+	MmsServer_setFilestoreBasepath(mmsServer, "./");
 	MmsServer_installFileAccessHandler(mmsServer, myMmsFileAccessHandler, NULL);
 }

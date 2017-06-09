@@ -27,7 +27,9 @@ SOURCES += \
     parser/SclParser.cpp \
     parser/SclValidate.cpp \
     parser/Utils.cpp \
-    parser/pugixml/pugixml.cpp
+    parser/pugixml/pugixml.cpp \
+    FileSvcHandler.cpp \
+    SGCBHandler.cpp
 
 IEC61850ROOT = /home/kuixiaon/SWAP/libiec61850.git.nk/trunk
 INCLUDEPATH += ./parser
