@@ -784,11 +784,15 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 	else
 		ctx += "-";
 	ctx += " ";
-	//
+	/*
 	if(xnLogCtrl.attribute("logName"))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
 			+ xnLN.attribute("lnClass").value() + "$"
 			+ xnLogCtrl.attribute("logName").value();
+			*/
+	if(xnLogCtrl.attribute("logName"))
+		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
+			+ string(xnLN.parent().attribute("inst").value());
 	else
 		ctx += "-";
 	ctx += " ";
