@@ -516,6 +516,8 @@ int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
 		GetDAFC(xnDA, fc);
 		GetDATrigOpt(xnDA, trgopt);
 		ParseDA(xnDA, fc, trgopt);
+		if(! strcmp(fc, "6")) /* SG == 6, SE == 7 */
+			ParseDA(xnDA, "7", trgopt);
 	}
 
 	return(0);
@@ -594,23 +596,6 @@ int CSCLParser::ParseDA(
 			+ trgopt + " "
 			+ GetDASAddr(xnDA, val[3])
 			+ ")";
-		if(GetDAVal(daVal, xnDA))
-			ctx += daVal;
-		ctx += ";\n";
-		/* for SG */
-		if(! strcmp(fc, "6"))
-		{
-			char t[16];
-			sprintf(t, "%d", SE);
-			ctx += string("DA(")
-				+ xnDA.attribute("name").value() + " "
-				+ GetDACount(xnDA, val[0]) + " "
-				+ GetDAType(xnDA, val[1], &type) + " "
-				+ t + " "
-				+ trgopt + " "
-				+ GetDASAddr(xnDA, val[3])
-				+ ")";
-		}
 		if(GetDAVal(daVal, xnDA))
 			ctx += daVal;
 		ctx += ";\n";
