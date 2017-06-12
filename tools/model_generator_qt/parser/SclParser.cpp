@@ -597,6 +597,23 @@ int CSCLParser::ParseDA(
 		if(GetDAVal(daVal, xnDA))
 			ctx += daVal;
 		ctx += ";\n";
+		/* for SG */
+		if(! strcmp(fc, "6"))
+		{
+			char t[16];
+			sprintf(t, "%d", SE);
+			ctx += string("DA(")
+				+ xnDA.attribute("name").value() + " "
+				+ GetDACount(xnDA, val[0]) + " "
+				+ GetDAType(xnDA, val[1], &type) + " "
+				+ t + " "
+				+ trgopt + " "
+				+ GetDASAddr(xnDA, val[3])
+				+ ")";
+		}
+		if(GetDAVal(daVal, xnDA))
+			ctx += daVal;
+		ctx += ";\n";
 	}
 
 	return(0);
