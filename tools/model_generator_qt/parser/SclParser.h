@@ -57,7 +57,7 @@ class CSCLParser
 		int ParseRptCtrl(const pugi::xml_node& xnRptCtrl);
 		void DumpRptInfo(const pugi::xml_node& xnRpt, const char *);
 		int ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
-				const pugi::xml_node& xnLN);
+				const pugi::xml_node& xnLN, bool bLNO);
 		int ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
 				const pugi::xml_node& xnLN);
 		char *GetDACount(const pugi::xml_node& xnDA, char *val);
@@ -69,6 +69,7 @@ class CSCLParser
 		char *GetRptTrgOpt(const pugi::xml_node& xnNode, char *val);
 		char *GetRptOptFld(const pugi::xml_node& xnNode, char *val);
 		char *GetEnumOrd(const pugi::xml_node& xnDA, const pugi::xml_node& xnV);
+		char *GetLNName(const pugi::xml_node& xnLN, bool bLN0);
 	private: /* api for validation */
 		int CheckDocSCL();
 		int CheckRequiredAttrs(const pugi::xml_node xnNode, int type, string& str);

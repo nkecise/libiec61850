@@ -459,7 +459,7 @@ int CSCLParser::ParseLN(const pugi::xml_node& xnLN, bool bLN0)
 	for(pugi::xml_node xnLogCtrl = xnLN.child("LogControl"); xnLogCtrl;
 			xnLogCtrl = xnLogCtrl.next_sibling("LogControl"))
 	{
-		ParseLogCtrl(xnLogCtrl, xnLN);
+		ParseLogCtrl(xnLogCtrl, xnLN, bLN0);
 	}
 	/* GSEControlBlock */
 	for(pugi::xml_node xnGseCtrl = xnLN.child("GSEControl"); xnGseCtrl;
@@ -775,7 +775,7 @@ int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
 }
 
 int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
-		const pugi::xml_node& xnLN)
+		const pugi::xml_node& xnLN, bool bLN0)
 {
 	ctx += "LC(";
 	ctx += string(xnLogCtrl.attribute("name").value()) + " ";
@@ -787,7 +787,7 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 
 	if(xnLogCtrl.attribute("logName"))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
-			+ GetLNName(xnLN)/*xnLN.attribute("lnClass").value()*/ + "$"
+			+ GetLNName(xnLN, bLN0)/*xnLN.attribute("lnClass").value()*/ + "$"
 			+ xnLogCtrl.attribute("logName").value();
 	/* for KETOP **
 	if(xnLogCtrl.attribute("logName"))
@@ -1052,6 +1052,24 @@ char *CSCLParser::GetDASAddr(const pugi::xml_node& xnDA, char *val)
 {
 	strcpy(val, "0");
 	return(val);
+}
+
+char *CSCLParser::GetLNName(const pugi::xml_node& xnLN, bool bLN0)
+{
+	char t[64];
+
+	if(bLN0)
+		strcpy(t, "LLN0");
+	else
+	{
+		memset(t, 0x00, sizeof(t));
+		sprintf(t, "%s%s%s",
+				xnLN.attribute("prefix").value(),
+				xnLN.attribute("lnClass").value(),
+				xnLN.attribute("inst").value()
+			   );
+	}
+	return(t);	
 }
 
 int CSCLParser::ParseSGCB(const pugi::xml_node& xnSGCB)
