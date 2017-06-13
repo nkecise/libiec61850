@@ -784,15 +784,16 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 	else
 		ctx += "-";
 	ctx += " ";
-	/*
+
 	if(xnLogCtrl.attribute("logName"))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
-			+ xnLN.attribute("lnClass").value() + "$"
+			+ GetLNName(xnLN)/*xnLN.attribute("lnClass").value()*/ + "$"
 			+ xnLogCtrl.attribute("logName").value();
-			*/
+	/* for KETOP **
 	if(xnLogCtrl.attribute("logName"))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
 			+ string(xnLN.parent().attribute("inst").value());
+			*/
 	else
 		ctx += "-";
 	ctx += " ";
