@@ -355,6 +355,8 @@ int CSCLParser::ParseDO(const pugi::xml_node& xnDO, bool bSDO)
 		GetDAFC(xnDA, fc);
 		GetDATrigOpt(xnDA, trgopt);
 		ParseDA(xnDA, fc, trgopt);
+		if(! strcmp(fc, "6")) /* SG == 6, SE == 7 */
+			ParseDA(xnDA, "7", trgopt);
 	}
 
 	return(0);
@@ -570,7 +572,7 @@ int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
 	//
 	pugi::xml_node xnAddress = xnConnedAP.child("Address");
 	if(! xnAddress)
-		ctx += "){\n}\n";	
+		ctx += "){\n}\n";
 	else
 	{
 		ctx += "){\n";
