@@ -149,27 +149,17 @@ void MainWindow::writeRequest(int i)
 {
 	char szObjRef[256];
 
-    strcpy(szObjRef, "PRS702LD0/STMP1.TmpSv01.mag.f");
+    strcpy(szObjRef, "SGB750ALDAGMXPROT/BusMMXU19.A.phsB.cVal.mag.f");
     DataAttribute *datAttr1 = (DataAttribute *)
 		IedModel_getModelNodeByObjectReference(model, szObjRef);
-    DataAttribute *datAttr2 = (DataAttribute *)
-            IedModel_getModelNodeByObjectReference(model, "PRS702LD0/STMP4.TmpSv10.mag.f");
-    DataAttribute *datAttr3 = (DataAttribute *)
-            IedModel_getModelNodeByObjectReference(model, "PRS702LD0/SCLI2.RPowerSv06.mag.f");
-    if(!datAttr1 || !datAttr2 || !datAttr3)
+    if(!datAttr1)
         return;
     MmsValue *val1 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
-    MmsValue *val2 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
-    MmsValue *val3 = MmsValue_newFloat(static_cast<float>(rand())/static_cast<float>(RAND_MAX));
 
 	IedServer_lockDataModel(iedServer);
     IedServer_updateAttributeValue(iedServer, datAttr1, val1);
-    IedServer_updateAttributeValue(iedServer, datAttr2, val2);
-    IedServer_updateAttributeValue(iedServer, datAttr3, val3);
 	IedServer_unlockDataModel(iedServer);
     MmsValue_delete(val1);
-    MmsValue_delete(val2);
-    MmsValue_delete(val3);
 }
 
 void MainWindow::connectionHandler(
