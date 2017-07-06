@@ -777,17 +777,20 @@ int CSCLParser::ParseGseCtrl(const pugi::xml_node& xnGseCtrl,
 int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 		const pugi::xml_node& xnLN, bool bLN0)
 {
+	char val[128];
+
 	ctx += "LC(";
 	ctx += string(xnLogCtrl.attribute("name").value()) + " ";
-	if(xnLogCtrl.attribute("datSet"))
+	if((xnLogCtrl.attribute("datSet")) && strlen(xnLogCtrl.attribute("datSet").value()))
 		ctx += string(xnLogCtrl.attribute("datSet").value());
 	else
 		ctx += "-";
 	ctx += " ";
 
-	if(xnLogCtrl.attribute("logName"))
+	memset(val, 0x00, sizeof(val));
+	if((xnLogCtrl.attribute("logName")) && (strlen(xnLogCtrl.attribute("logName").value())))
 		ctx += string(xnLN.parent().attribute("inst").value()) + "/"
-			+ GetLNName(xnLN, bLN0)/*xnLN.attribute("lnClass").value()*/ + "$"
+			+ GetLNName(xnLN, bLN0, val)/*xnLN.attribute("lnClass").value()*/ + "$"
 			+ xnLogCtrl.attribute("logName").value();
 	/* for KETOP **
 	if(xnLogCtrl.attribute("logName"))
@@ -798,7 +801,6 @@ int CSCLParser::ParseLogCtrl(const pugi::xml_node& xnLogCtrl,
 		ctx += "-";
 	ctx += " ";
 	//
-	char val[8];
 	ctx += string(GetRptTrgOpt(xnLogCtrl, val)) + " ";
 	//
 	if(xnLogCtrl.attribute("intgPd"))
@@ -1054,22 +1056,19 @@ char *CSCLParser::GetDASAddr(const pugi::xml_node& xnDA, char *val)
 	return(val);
 }
 
-char *CSCLParser::GetLNName(const pugi::xml_node& xnLN, bool bLN0)
+char *CSCLParser::GetLNName(const pugi::xml_node& xnLN, bool bLN0, char *val)
 {
-	char t[64];
-
 	if(bLN0)
-		strcpy(t, "LLN0");
+		strcpy(val, "LLN0");
 	else
 	{
-		memset(t, 0x00, sizeof(t));
-		sprintf(t, "%s%s%s",
+		sprintf(val, "%s%s%s",
 				xnLN.attribute("prefix").value(),
 				xnLN.attribute("lnClass").value(),
 				xnLN.attribute("inst").value()
 			   );
 	}
-	return(t);	
+	return(val);	
 }
 
 int CSCLParser::ParseSGCB(const pugi::xml_node& xnSGCB)

@@ -69,7 +69,7 @@ class CSCLParser
 		char *GetRptTrgOpt(const pugi::xml_node& xnNode, char *val);
 		char *GetRptOptFld(const pugi::xml_node& xnNode, char *val);
 		char *GetEnumOrd(const pugi::xml_node& xnDA, const pugi::xml_node& xnV);
-		char *GetLNName(const pugi::xml_node& xnLN, bool bLN0);
+		char *GetLNName(const pugi::xml_node& xnLN, bool bLN0, char *val);
 	private: /* api for validation */
 		int CheckDocSCL();
 		int CheckRequiredAttrs(const pugi::xml_node xnNode, int type, string& str);
