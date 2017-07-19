@@ -43,6 +43,7 @@ class CSCLParser
 		map<string, pugi::xml_node> mEnumType;
 		map<string, map<string, vector<string>>> mSubNet;
 		int ParseIEDSection();
+		int ParseIEDSectionEx();
 		int ParseCommunicationSection();
 		int ParseDataTypeTemplates();
 		int ParseIED(const pugi::xml_node& xnIED);

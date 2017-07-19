@@ -7,6 +7,7 @@
 #include "SclParser.h"
 #include "Error.h"
 #include "AttributeType.h"
+#include "RptCtrlList.pb.h"
 
 CSCLParser::CSCLParser()
 {
@@ -1088,6 +1089,96 @@ void CSCLParser::GetCfgCtx(std::string& _ctx_)
 }
 
 int CSCLParser::ParseIEDSection()
+{
+	PBRptCtrlList pbRptList;
+	pugi::xml_node xnRoot = doc.select_single_node("/SCL").node();
+	if(! xnRoot)
+		return(ERROR_MISSING_SCL);
+	mIED.clear();
+	for(pugi::xml_node xnIED = xnRoot.child("IED"); xnIED;
+		xnIED = xnIED.next_sibling("IED"))
+	{
+		PBRptCtrlList_PBIED *pbIED = pbRptList.add_ied();
+		pbIED->set_iedname(xnIED.attribute("name").value());
+		for(pugi::xml_node xnAP = xnIED.child("AccessPoint"); xnAP;
+				xnAP = xnAP.next_sibling("AccessPoint"))
+		{
+			PBRptCtrlList_PBIED_PBAccessPoint *pbAP = pbIED->add_ap();
+			pbAP->set_apname(xnAP.attribute("name").value());
+			for(pugi::xml_node xnServer = xnAP.child("Server"); xnServer;
+					xnServer = xnServer.next_sibling("Server"))
+			{
+				for(pugi::xml_node xnLDevice = xnServer.child("LDevice"); xnLDevice;
+						xnLDevice = xnLDevice.next_sibling("LDevice"))
+				{
+					PBRptCtrlList_PBIED_PBAccessPoint_PBLDevice *pbLD = pbAP->add_ld();
+					pbLD->set_ldinst(xnLDevice.attribute("inst").value());
+					// LLN0
+					char szLNRef[128];
+					pugi::xml_node xnLN = xnLDevice.child("LN0");
+					PBRptCtrlList_PBIED_PBAccessPoint_PBLDevice_PBLNode *pbLN = NULL;
+					if(xnLN)
+					{
+						pbLN = pbLD->add_ln();
+						pbLN->set_lnref("LLN0");
+						for(pugi::xml_node xnRptCtrl = xnLN.child("ReportControl"); xnRptCtrl;
+								xnRptCtrl = xnRptCtrl.next_sibling("ReportControl"))
+						{
+							PBRptCtrlList_PBIED_PBAccessPoint_PBLDevice_PBLNode_PBRptCtrl *pbCtrl = 
+								pbLN->add_rptctrl();
+							pbCtrl->set_name(xnRptCtrl.attribute("name").value());
+							pbCtrl->set_id(xnRptCtrl.attribute("rptID").value());
+							if(! strcmp(xnRptCtrl.attribute("buffered").value(), "true"))
+								pbCtrl->set_buffered(true);
+							else
+								pbCtrl->set_buffered(false);
+						}
+					}
+					continue;
+					for(pugi::xml_node xnLN = xnLDevice.child("LN"); xnLN;
+							xnLN = xnLN.next_sibling("LN"))
+					{
+						pbLN = pbLD->add_ln();
+						memset(szLNRef, 0x00, sizeof(szLNRef));
+						sprintf(szLNRef, "%s%s%s",
+								xnLN.attribute("prefix").value(),
+								xnLN.attribute("lnClass").value(),
+								xnLN.attribute("inst").value());
+						pbLN->set_lnref(szLNRef);
+						for(pugi::xml_node xnRptCtrl = xnLN.child("ReportControl"); xnRptCtrl;
+								xnRptCtrl = xnRptCtrl.next_sibling("ReportControl"))
+						{
+							PBRptCtrlList_PBIED_PBAccessPoint_PBLDevice_PBLNode_PBRptCtrl *pbCtrl = 
+								pbLN->add_rptctrl();
+							pbCtrl->set_name(xnRptCtrl.attribute("name").value());
+							pbCtrl->set_id(xnRptCtrl.attribute("rptID").value());
+							if(! strcmp(xnRptCtrl.attribute("buffered").value(), "true"))
+								pbCtrl->set_buffered(true);
+							else
+								pbCtrl->set_buffered(false);
+						}
+					}
+				}
+			}
+		}
+	}
+	// serialize for debugging purpose
+	unsigned int msglen = pbRptList.ByteSize();
+	char *buffer = (char *)malloc(msglen);
+	if(!pbRptList.SerializeToArray(buffer, msglen))
+		return(1);
+	FILE *fp = fopen("MsgDump.bin", "wb");
+	if(fp)
+	{
+		fwrite(buffer, 1, msglen, fp);
+		fclose(fp);
+	}
+	free(buffer);
+
+	return(0);
+}
+
+int CSCLParser::ParseIEDSectionEx()
 {
 	pugi::xml_node xnRoot = doc.select_single_node("/SCL").node();
 	if(! xnRoot)

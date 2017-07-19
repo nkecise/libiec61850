@@ -1,0 +1,31 @@
+// Report Control Model
+message PBRptCtrlList
+{
+	repeated PBIED ied = 1;
+	message PBIED
+	{
+		required string iedName	= 1;
+		repeated PBAccessPoint ap	= 2;
+		message PBAccessPoint
+		{
+			required string apName	= 1;
+			repeated PBLDevice ld	= 2;
+			message PBLDevice
+			{
+				required string ldInst	= 1;
+				repeated PBLNode ln = 2;
+				message PBLNode 
+				{
+					required string lnRef = 1;
+					repeated PBRptCtrl rptCtrl = 2;
+					message PBRptCtrl
+					{
+						required string name = 1;
+						required string id	= 2;
+						required bool	buffered	= 3;
+					}
+				}
+			}
+		}
+	}
+}
