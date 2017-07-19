@@ -112,6 +112,7 @@ void MainWindow::DoSim()
 	}
 	//
 	iedServer = IedServer_create(model);
+	enumServerModel();
 	IedServer_setConnectionIndicationHandler(
 			iedServer, 
 			(IedConnectionIndicationHandler)connectionHandler,

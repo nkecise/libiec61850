@@ -54,6 +54,13 @@ private:
 	map<string, pugi::xml_node> mIED;
 	IedServer iedServer;
 	IedModel *model;
+private:
+	FILE *fmod;
+	void enumServerModel();
+	void enumLD(LogicalDevice *ld);
+	void enumLN(ModelNode *node);
+	void enumDO(ModelNode *node, char *prefix);
+	void enumDA(ModelNode *node, char *prefix);
 
 public:
 	static MainWindow *pMainWnd;

@@ -7,6 +7,7 @@ COMNPATH =
 GUIDIR	= .\UI
 QTROOT	= D:\Qt\4.8.6
 IEC61850ROOT = ..\..
+GOOGLEROOT	= .
 VCROOT		= $(VCINSTALLDIR)
 MSSDKROOT	= $(WINDOWSDKDIR)
 cc			= cl.exe
@@ -32,9 +33,12 @@ OBJECTS	= $(OUTDIR)\GenConfig.obj	\
 		  $(OUTDIR)\moc_CentralWidget.obj \
 		  $(OUTDIR)\SclValidate.obj \
 		  $(OUTDIR)\SGCBHandler.obj \
-		  $(OUTDIR)\FileSvcHandler.obj
+		  $(OUTDIR)\FileSvcHandler.obj \
+		  $(OUTDIR)\ModelHandler.obj \
+		  $(OUTDIR)\RptCtrlList.pb.obj
 
-DEPENDS	= $(GUIDIR)\uic_centralListWidget.h
+DEPENDS	= $(GUIDIR)\uic_centralListWidget.h \
+		  RptCtrlList.pb.cc
 
 ## target ##
 all: $(OUTDIR) $(DEPENDS) $(OUTDIR)\$(PROJECT).exe
@@ -69,8 +73,9 @@ IEC61850INCPATH = -I"$(IEC61850ROOT)/config" \
 		-I"$(IEC61850ROOT)/src/mms/iso_mms/asn1c" \
 		-I"$(IEC61850ROOT)/src/logging" \
 		-I"$(IEC61850ROOT)/src/vs"
+GOOGLEINCPATH = -I"$(GOOGLEROOT)"
 
-incpath		= $(QTINCPATH) $(IEC61850INCPATH)
+incpath		= $(QTINCPATH) $(IEC61850INCPATH) $(GOOGLEINCPATH)
 cflags		= $(cflags) $(cvars) $(cdebug) $(incpath)
 
 ## create output directory ##
@@ -78,9 +83,12 @@ $(OUTDIR):
 	IF NOT EXIST "$(OUTDIR)/$(NULL)" MKDIR "$(OUTDIR)"
 
 ### implicit rules
-.SUFFIXES: .cpp .c
+.SUFFIXES: .cpp .c .cc
 
 {.}.cpp{$(OUTDIR)}.obj:
+	$(cc) $(cflags) /Fo"$(OUTDIR)\\" /Fp"$(OUTDIR)\\" /Fd"$(OUTDIR)\\" $<
+
+{.\parser}.cc{$(OUTDIR)}.obj:
 	$(cc) $(cflags) /Fo"$(OUTDIR)\\" /Fp"$(OUTDIR)\\" /Fd"$(OUTDIR)\\" $<
 
 {$(OUTDIR)}.cpp{$(OUTDIR)}.obj:
@@ -116,12 +124,16 @@ $(OUTDIR)\qrc_GenConfig.cpp : .\GenConfig.qrc
 $(OUTDIR)\GenConfig.res : .\GenConfig.rc
 	rc.exe -fo $(OUTDIR)\GenConfig.res .\GenConfig.rc
 
+## protoc ##
+RptCtrlList.pb.cc:.\parser\RptCtrlList.proto
+	protoc --cpp_out=.\parser -I.\parser .\parser\RptCtrlList.proto
+
 ## link ##
-QTLIBPATH	= /LIBPATH:"$(QTROOT)\lib" /LIBPATH:"$(IEC61850ROOT)\lib"
+QTLIBPATH	= /LIBPATH:"$(QTROOT)\lib" /LIBPATH:"$(IEC61850ROOT)\lib" /LIBPATH:"$(GOOGLEROOT)\lib"
 !IFDEF	NODEBUG
-QTLIBS	= QtGui.lib QtCore.lib QtMain.lib iec61850.lib
+QTLIBS	= QtGui.lib QtCore.lib QtMain.lib iec61850.lib libprotobuf.lib
 !ELSE
-QTLIBS	= QtGuid.lib QtCored.lib QtMaind.lib iec61850d.lib
+QTLIBS	= QtGuid.lib QtCored.lib QtMaind.lib iec61850d.lib libprotobufD.lib
 !ENDIF
 
 WIN32LIBS	= kernel32.lib user32.lib gdi32.lib ws2_32.lib imm32.lib \
